@@ -2,7 +2,7 @@
 // Ref https://github.com/lorenwest/node-config/wiki/Environment-Variables
 // Sets up the config directory
 process.env.NODE_CONFIG_DIR = `${process.cwd()}/config`
-process.env.UV_THREADPOOL_SIZE = '16';
+process.env.UV_THREADPOOL_SIZE = '16'
 
 import { validateConfig } from './config'
 
@@ -13,7 +13,7 @@ if (!validConf.valid) {
     process.exit(1)
 }
 
-import * as os from 'os';
+import * as os from 'os'
 import cluster from 'cluster'
 import start from './startServices'
 
@@ -24,24 +24,24 @@ if (process.env.MULTI_CORE == 'true') {
     if (cluster.isMaster) {
         console.info(`Master ${process.pid} started`)
 
-        let workers = new Set();
+        let workers = new Set()
 
         let forkWorker = () => {
-            let worker = cluster.fork();
-            workers.add(worker);
-            console.info(`Forked worker ${worker.process.pid}`);
-        };
+            let worker = cluster.fork()
+        workers.add(worker)
+            console.info(`Forked worker ${worker.process.pid}`)
+        }
 
         // Fork workers.
         for (let i = 0; i < coreCount; i++) {
-            forkWorker();
+            forkWorker()
         }
 
         cluster.on('exit', worker => {
-            console.info(`Worker ${worker.process.pid} died`);
-            workers.delete(worker);
-            setTimeout(forkWorker, 1000);
-        });
+            console.info(`Worker ${worker.process.pid} died`)
+            workers.delete(worker)
+            setTimeout(forkWorker, 1000)
+        })
     } else {
         start()
     }
