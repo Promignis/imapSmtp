@@ -1,0 +1,16 @@
+{   
+    "server": {
+        "port": 8080
+    },
+    "logger":{
+        "logDirectory" : "/home/logs/bizgaze/",
+        "logFile": "server.log"
+    },
+    "db": {
+        "host": "",
+        "name": ""
+    },
+    "redis":{
+        "url": ""
+    }
+}

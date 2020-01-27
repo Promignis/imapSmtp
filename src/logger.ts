@@ -1,0 +1,58 @@
+import * as path from 'path'
+import * as fs from 'fs'
+import { createLogger, transports, format } from 'winston'
+import { config } from './config'
+
+
+let fileName = <string>config.get("logger.logFile")
+let filePath = <string>config.get("logger.logDirectory")
+
+// Winston does not create directories
+if (!fs.existsSync(filePath)) {
+    console.log(filePath)
+    // Create the directory if it does not exist
+    fs.mkdirSync(filePath, { recursive: true });
+}
+
+// Formats
+// This will colorize the logs in console
+const colorizeFormat = format.colorize({ colors: { info: 'blue', error: 'red', warn: 'yellow' } });
+// This will log the stack trace 
+const errorsFormat = format.errors({ stack: true })
+
+
+const consoleFormat = format.combine(format.timestamp(), colorizeFormat, errorsFormat, format.simple())
+const fileFormtat = format.combine(format.timestamp(), errorsFormat, format.json())
+
+// Refer https://github.com/winstonjs/winston/blob/master/docs/transports.md for more options
+let loggerOptions = {
+    file: {
+        level: 'info',
+        filename: fileName,
+        dirname: filePath,
+        format: fileFormtat
+    },
+    console: {
+        level: 'silly',
+        format: consoleFormat
+    }
+}
+
+const fileTransport = new transports.File(loggerOptions.file)
+const consoleTransport = new transports.Console(loggerOptions.console)
+
+
+let logger = createLogger(
+    {
+        transports: [
+            fileTransport,
+        ]
+    }
+)
+
+if (process.env.NODE_ENV !== 'production') {
+    // Will add console logging only in development enviornment
+    logger.add(consoleTransport)
+}
+
+export default logger
