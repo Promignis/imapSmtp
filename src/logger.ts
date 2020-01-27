@@ -1,7 +1,7 @@
-import * as path from 'path'
 import * as fs from 'fs'
 import { createLogger, transports, format } from 'winston'
 import { config } from './config'
+import "winston-daily-rotate-file"
 
 
 let fileName = <string>config.get("logger.logFile")
@@ -35,17 +35,26 @@ let loggerOptions = {
     console: {
         level: 'silly',
         format: consoleFormat
+    },
+    rotateFile: {
+        level: 'info',
+        filename: `%DATE%_${fileName}`,
+        dirname: filePath,
+        format: fileFormtat,
+        datePattern: <string>config.get("logger.dateFormat"),
+        maxSize: <number>config.get("logger.maxLogFilesNumber"),
+        frequency: <string>config.get("logger.rotationFrequency")
     }
 }
 
-const fileTransport = new transports.File(loggerOptions.file)
 const consoleTransport = new transports.Console(loggerOptions.console)
+const rotatingFileTransport = new transports.DailyRotateFile(loggerOptions.rotateFile)
 
 
 let logger = createLogger(
     {
         transports: [
-            fileTransport,
+            rotatingFileTransport,
         ]
     }
 )

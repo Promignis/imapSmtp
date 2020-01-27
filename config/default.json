@@ -4,7 +4,10 @@
     },
     "logger":{
         "logDirectory" : "/home/logs/bizgaze/",
-        "logFile": "server.log"
+        "logFile": "server.log",
+        "rotationFrequency": "24h",
+        "maxLogFilesNumber": null,
+        "dateFormat": "YYYY-MM-DD-HH"
     },
     "db": {
         "host": "",

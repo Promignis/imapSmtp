@@ -12,7 +12,8 @@
   "dependencies": {
     "@types/config": "0.0.36",
     "config": "^3.2.5",
-    "winston": "^3.2.1"
+    "winston": "^3.2.1",
+    "winston-daily-rotate-file": "^4.4.2"
   },
   "devDependencies": {
     "@types/node": "^13.5.0",
