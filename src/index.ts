@@ -1,7 +1,7 @@
-// 
 // Ref https://github.com/lorenwest/node-config/wiki/Environment-Variables
 // Sets up the config directory
 process.env.NODE_CONFIG_DIR = `${process.cwd()}/config`
+
 process.env.UV_THREADPOOL_SIZE = '16'
 
 import { validateConfig } from './config'
@@ -32,11 +32,12 @@ if (process.env.MULTI_CORE == 'true') {
             console.info(`Forked worker ${worker.process.pid}`)
         }
 
-        // Fork workers.
+        // Fork workers
         for (let i = 0; i < coreCount; i++) {
             forkWorker()
         }
 
+        // TODO: Add more checks here
         cluster.on('exit', worker => {
             console.info(`Worker ${worker.process.pid} died`)
             workers.delete(worker)

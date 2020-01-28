@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import { createLogger, transports, format } from 'winston'
-import { config } from './config'
+import config from './config'
 import "winston-daily-rotate-file"
 
 
@@ -11,12 +11,12 @@ let filePath = <string>config.get("logger.logDirectory")
 if (!fs.existsSync(filePath)) {
     console.log(filePath)
     // Create the directory if it does not exist
-    fs.mkdirSync(filePath, { recursive: true });
+    fs.mkdirSync(filePath, { recursive: true })
 }
 
 // Formats
 // This will colorize the logs in console
-const colorizeFormat = format.colorize({ colors: { info: 'blue', error: 'red', warn: 'yellow' } });
+const colorizeFormat = format.colorize({ colors: { info: 'blue', error: 'red', warn: 'yellow' } })
 // This will log the stack trace 
 const errorsFormat = format.errors({ stack: true })
 
@@ -64,4 +64,42 @@ if (process.env.NODE_ENV !== 'production') {
     logger.add(consoleTransport)
 }
 
-export default logger
+// Refer: https://github.com/fastify/fastify/blob/master/docs/Logging.md
+class FastifyCompliantLogger {
+
+    logger: any
+    constructor(logger: any) {
+        this.logger = logger;   
+    }
+
+
+    info(msg: string) {
+        this.logger.info(msg)
+    }
+
+    error(msg: string) {
+        this.logger.info(msg)
+    }
+
+    debug(msg: string) {
+        this.logger.debug(msg)
+    }
+
+    fatal(msg: string) {
+        this.logger.error(msg)
+    }
+
+    warn(msg: string) {
+        this.logger.warn(msg)
+    }
+
+    trace(msg: string) {
+        this.logger.verbose(msg)
+    }
+
+    child() {
+        return new FastifyCompliantLogger(this.logger)
+    }
+}
+
+export default new FastifyCompliantLogger(logger)

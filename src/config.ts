@@ -1,4 +1,4 @@
-import c from 'config';
+import c from 'config'
 
 //config check
 export function validateConfig(): {valid: boolean, wrongProps: string[]} {
@@ -16,4 +16,4 @@ export function validateConfig(): {valid: boolean, wrongProps: string[]} {
     return {valid, wrongProps}
 }
 
-export const config = c
+export default c
