@@ -83,6 +83,7 @@ User collection stores all the user information like passwords, profile and user
 ```
 users {
     _id<bson>
+    role<string>
     username<string>
     profile {
         First name<string>
