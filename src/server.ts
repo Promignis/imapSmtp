@@ -16,9 +16,9 @@ const startHTTPServer = async () => {
         let port = <number>config.get("server.port")
         await server.listen(port, "0.0.0.0");
     } catch (e) {
-        server.log.error(`Could not start server: ${e}`)
+        server.log.error("Could not serve: ", e)
         process.exit(1)
-    }   
+    }
 }
 
 export default startHTTPServer

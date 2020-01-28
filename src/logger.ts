@@ -69,7 +69,7 @@ class FastifyCompliantLogger {
 
     logger: any
     constructor(logger: any) {
-        this.logger = logger;   
+        this.logger = logger;
     }
 
 
@@ -77,8 +77,13 @@ class FastifyCompliantLogger {
         this.logger.info(msg)
     }
 
-    error(msg: string) {
-        this.logger.info(msg)
+    error(msg: string, err: Error | undefined = undefined) {
+        if (!(err instanceof Error)) err = undefined
+        if (err == undefined) {
+            this.logger.error(msg)
+        } else {
+            this.logger.error(msg, err)
+        }
     }
 
     debug(msg: string) {
