@@ -1,1 +1,7 @@
-{}
+{   
+    "db": {
+        "connection": {
+            "autoIndex": false
+        }
+    }
+}

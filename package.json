@@ -11,10 +11,12 @@
   "license": "ISC",
   "dependencies": {
     "@types/config": "0.0.36",
+    "@types/mongoose": "^5.7.0",
     "config": "^3.2.5",
     "fastify": "^2.11.0",
     "fastify-plugin": "^1.6.0",
     "fastify-swagger": "^2.5.0",
+    "mongoose": "^5.8.10",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^4.4.2"
   },
