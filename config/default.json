@@ -13,12 +13,19 @@
         "host": "cluster0-shard-00-01-6xhys.gcp.mongodb.net:27017,cluster0-shard-00-00-6xhys.gcp.mongodb.net:27017,cluster0-shard-00-02-6xhys.gcp.mongodb.net:27017",
         "username": "test1",
         "password": "123456qwerty",
-        "name": "bizgaze",
+        "name": "app",
         "connection": {
             "connectionPoolSize": 10,
-            "initialConnectionTimeOut": 10000,
+            "initialConnectionTimeOut": 20000,
             "socketTimeOut": 0,
             "autoIndex": true
+        },
+        "attachmentdb": {
+            "enabled": true,
+            "name": "apptwo",
+            "host": "cluster0-shard-00-01-6xhys.gcp.mongodb.net:27017,cluster0-shard-00-00-6xhys.gcp.mongodb.net:27017,cluster0-shard-00-02-6xhys.gcp.mongodb.net:27017",
+            "username": "test1",
+            "password": "123456qwerty"
         }
     },
     "redis":{
