@@ -20,11 +20,6 @@ var userSchema = new Schema({
         unique: true,
     },
     disabled: { type: Boolean, required: true, default: false },
-    quotas: {
-        type: Schema.Types.ObjectId,
-        ref: 'Quotas',
-        required: true
-    },
     lastLogin: {
         time: { type: Date },
         event: {
@@ -36,7 +31,8 @@ var userSchema = new Schema({
     metadata: { type: Object }
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
-    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt'}
+    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt'},
+    collection: "users"
 })
 
 const indexes: ModelIndex[] = [

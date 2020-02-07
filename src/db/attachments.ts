@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 import { ModelData, ModelIndex } from './types'
 
 const Schema = mongoose.Schema;
-const modelName = "Attachments"
+const modelName = "Attachment"
 
 var attachmentsSchema = new Schema({
     length: { type: Number },
@@ -15,11 +15,15 @@ var attachmentsSchema = new Schema({
     metadata: { 
         bucket: {
             type: Schema.Types.ObjectId
+        },
+        count: {
+            type: Number
         }
     },
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
-    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' }
+    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
+    collection: "attachments.files"
 })
 
 const indexes: ModelIndex[] = []
