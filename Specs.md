@@ -96,7 +96,6 @@ users {
     disabled<bool> // If the admin has disabled the user
     created_at<int64:unix timestamp>
     updated_at<int64:unix timestamp>
-    quotas<bson> // Quota id, This way multiple users can be in a group which has same quotas. Can be set by the admin
     lastLogin {
         time<int64:unix timestamp>
         event<bson> // event_id
@@ -131,6 +130,7 @@ addresses {
     host<string> // eg John.Doe
     domain<string> // eg bizgaze.com
     address<string> // eg John.Doe@bizgaze.com
+    quotas<bson> // Quota id, This way multiple addresses can be in a group which has same quotas. Can be set by the admin
     created_at<int64:unix timestamp>// timestamp
 }
 ```
@@ -186,7 +186,7 @@ messages{
     userRemoved<bool> // If the original user of this message has been disabled by this admin
     idate<int64:timestamp> // internal date for IMAP server, As specified in [RFC3501](https://tools.ietf.org/html/rfc3501), section 2.3.3
     size<int64> // total message envelope headers and body size in Bytes. This does not include the attachment size.
-    parsedHeaders<map<string,string>> // Parsed message headers, eg. "subject":"message sub"
+    parsedHeaders<map<string,string>> // Parsed message headers, eg. 
     messageId<string> //unique messageId as given in the header
     draft<bool> // True if the message is a draft
     subject<string> // message subject
@@ -243,7 +243,8 @@ mailboxes {
     subscribed<bool> // Needed for IMAP server. Set true when the mailbox is subscibed to by the client
     retention<bool> // Its true for mailboxes like TRASH, where messages have a temporary retention and deleted after the `retentionTime` expires
     retentionTime<int64> // Retention time in ms, can be configured.
-
+    user_id<bson>
+    address_id<bson>
 }
 ```
 
@@ -255,5 +256,19 @@ eventlogs {
     user_id<bson>
     action<string> // taken from a list of predefined server actions, like "ACCOUNT_CREATED"
     meta<map<string, string>> // Meta data about the event. Will vary according to the action
+}
+
+```
+
+### Buckets
+Buckets are a way to organize users files and attachents. Right now its just simple boxes to put files into. Every user will have a default bucket per address into which all the attachment files will go. More properties and complete directory like functionality can be added in the future. 
+
+```
+buckets {
+    user_id<bson> // The user that the bucket belongs to
+    address_id<bson> // The adress for that bucket
+    name<string>
+    size<int64> // Bytes
+    metadata<map<string, string>>
 }
 ```
