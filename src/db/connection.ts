@@ -5,6 +5,11 @@ import { ModelData } from './types'
 import userModel from './users'
 import attachmentModel from './attachments'
 import bucketsModel from './buckets'
+import mailboxesModel from './mailboxes'
+import messagesModel from './messages'
+import addressesModel from './addresses'
+import threadModel from './threads'
+import eventsModel from './eventlogs'
 import fastifyPlugin from 'fastify-plugin'
 
 const connectionSettings = {
@@ -61,7 +66,7 @@ let mainConnectionParams: connectionParams = {
     name: DB['main'],
     uri: createMongoConnectionUrl(appHost, appUsername, appPassword, appDBName),
     settings: connectionSettings,
-    schemas: [userModel, bucketsModel]
+    schemas: [userModel, bucketsModel, addressesModel, messagesModel, eventsModel, threadModel, mailboxesModel]
 }
 
 let connectionParams: connectionParams[] = []

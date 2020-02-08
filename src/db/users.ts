@@ -28,6 +28,11 @@ var userSchema = new Schema({
         }
     },
     settings: { type: Object }, // TODO: Need to set defaults once req are given
+    quotas: {
+        storageQuota: { type: String, required: true },
+        maxInbound: { type: String, required: true },
+        maxOutbound: { type: String, required: true }
+    },
     metadata: { type: Object }
 }, {
     // Assigns createdAt and updatedAt fields to the schema,

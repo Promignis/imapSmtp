@@ -17,7 +17,7 @@ var mailboxesSchema = new Schema({
     },
     name: {type: String, required: true},
     imapName: {type: String, required: true},
-    specialUse: {type: Boolean, required: true},
+    specialUse: {type: String},
     delimiter: {type: String},
     uidValidity: {type: Number, required: true},
     udiNext: {type: Number, required: true},

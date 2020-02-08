@@ -13,11 +13,7 @@ var addressAcema = new Schema({
     host: { type: String, required: true },
     domain: { type: String, required: true },
     address: { type: String, required: true, unique: true },
-    quotas: {
-        type: Schema.Types.ObjectId,
-        ref: 'Quotas',
-        required: true
-    },
+    storageUsed: {type: Number, required: true},
     metadata: { type: Object }
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
