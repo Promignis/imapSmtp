@@ -21,6 +21,14 @@ const connectionSettings = {
     socketTimeoutMS: <number>config.get("db.connection.socketTimeOut")
 }
 
+// To allow using different kind of data in different databases.
+// Can be used if we dont want to use the the main db for storing attachments
+// This way we can use a different mount folder or storage engine for attachments
+const DB = {
+    "main": "main",
+    "attachment": "attachment"
+}
+
 const appUsername = <string>config.get("db.username")
 const appPassword = <string>config.get("db.password")
 const appHost = <string>config.get("db.host")
@@ -50,7 +58,7 @@ if (<boolean>config.get("db.attachmentdb.enabled")) {
 }
 
 let mainConnectionParams: connectionParams = {
-    name: appDBName,
+    name: DB['main'],
     uri: createMongoConnectionUrl(appHost, appUsername, appPassword, appDBName),
     settings: connectionSettings,
     schemas: [userModel, bucketsModel]
@@ -60,14 +68,23 @@ let connectionParams: connectionParams[] = []
 
 connectionParams.push(mainConnectionParams)
 
+// If its enabled , then attachments are stored in seperate DB.
 if (attachmentDBEnabled) {
     let name: string = <string>config.get("db.attachmentdb.name") != "" ? <string>config.get("db.attachmentdb.name") : "gridfs"
     let host: string = <string>config.get("db.attachmentdb.host")
     let username: string = <string>config.get("db.attachmentdb.username")
     let password: string = <string>config.get("db.attachmentdb.password")
     connectionParams.push({
-        name: name,
+        name: DB["attachment"],
         uri: createMongoConnectionUrl(host, username, password, name),
+        settings: connectionSettings,
+        schemas: [attachmentModel]
+    })
+} else {
+    // Attachments are stored in main DB.
+    connectionParams.push({
+        name: DB["attachment"],
+        uri: createMongoConnectionUrl(appHost, appUsername, appPassword, appDBName),
         settings: connectionSettings,
         schemas: [attachmentModel]
     })
@@ -147,10 +164,27 @@ async function setupMongoDBPlugin(fastify: any, { }) {
 
     // Decorate
     if (dbConnections != null && Object.keys(dbConnections).length != 0) {
-        decorator = dbConnections
+        // decorator = dbConnections
+        Object.keys(dbConnections).forEach(dbName => {
+            decorator[dbName] = {
+                connection: dbConnections!.dbName.connection, ...dbConnections!.dbName.models
+            }
+        })
     }
 
-    // Will be used like: fastify.db.app.User.save({}) or fastify.db.attachments
+    // Will be used like: fastify.db.app.User.save({}) or fastify.db.attachments.Attachment.find({})
+    /**
+     * Decorated value: 
+     * db: {
+     *  app: {
+     *      connection: <mongoose connection obj>
+     *      <Modelname>: <mongoose model obj>
+     *   },
+     *  <other db name>: {
+     *      ... same as above
+     *  }
+     * }
+     */
     fastify.decorate("db", decorator);
 
     // Close connection when app is closing
