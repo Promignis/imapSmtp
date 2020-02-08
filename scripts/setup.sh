@@ -1,4 +1,7 @@
 #!/bin/sh
+
+# app related installations
+
 NODEJS=1
 HARAKA=1
 
