@@ -4,6 +4,14 @@ import { ModelData, ModelIndex } from './types'
 const Schema = mongoose.Schema;
 const modelName = "Bucket"
 
+export interface IBucket extends mongoose.Document {
+    user: mongoose.Types.ObjectId,
+    address: mongoose.Types.ObjectId,
+    name: string,
+    size: number,
+    metadata: object
+} 
+
 var bucketSchema = new Schema({
     user: {
         type: Schema.Types.ObjectId,
@@ -27,8 +35,11 @@ var bucketSchema = new Schema({
 const indexes: ModelIndex[] = [
     {
         fields: { user: 1 },
+    },
+    {
+        fields: {address: 1, user: 1, name: 1},
         options: {
-            unique: false
+            unique: true
         }
     }
 ]

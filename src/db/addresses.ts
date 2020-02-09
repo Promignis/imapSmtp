@@ -4,6 +4,15 @@ import { ModelData, ModelIndex } from './types'
 const Schema = mongoose.Schema;
 const modelName = "Address"
 
+export interface IAddress extends mongoose.Document {
+    user: mongoose.Types.ObjectId,
+    host: string,
+    domain: string,
+    address: string,
+    storageUsed: number,
+    metadata: object
+} 
+
 var addressAcema = new Schema({
     user: {
         type: Schema.Types.ObjectId,

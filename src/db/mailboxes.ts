@@ -4,6 +4,22 @@ import { ModelData, ModelIndex } from './types'
 const Schema = mongoose.Schema;
 const modelName = "Mailbox"
 
+export interface IMailbox extends mongoose.Document {
+    user: mongoose.Types.ObjectId,
+    address: mongoose.Types.ObjectId,
+    name: string,
+    imapName: string,
+    specialUse: string,
+    delimiter: string,
+    uidValidity: number,
+    udiNext: number
+    modifyIndex: number
+    subscribed: number
+    retention: boolean,
+    retentionTime: Date,
+    metadata: object
+} 
+
 var mailboxesSchema = new Schema({
     user: {
         type: Schema.Types.ObjectId,
