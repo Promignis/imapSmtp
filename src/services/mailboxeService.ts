@@ -1,9 +1,9 @@
 import mongoose from "mongoose"
 import { db } from '../db/connection'
-import {to} from '../utils'
-import {HTTP_STATUS, ServerError} from '../errors'
-import mongodb from 'mongodb'
-import {IMailbox} from '../db/mailboxes'
+import { to } from '../utils'
+import { HTTP_STATUS, ServerError } from '../errors'
+import { IMailbox } from '../db/mailboxes'
+import { ServiceContext } from '../types/types'
 
 class MailboxService {
 
@@ -54,7 +54,12 @@ class MailboxService {
     defaultTrashRetention: Number = 0 // This can be configured in the future. 0 means infinite retention
     defaultJunkRetention: Number = 0
 
-    async createSystemMailboxes(user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, options?: Object): Promise<IMailbox[] | undefined> {
+    async createSystemMailboxes(ctx: ServiceContext, user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, options?: Object): Promise<IMailbox[] | undefined> {
+        let dbCallOptions: any = {}
+        if (ctx.session){
+            dbCallOptions.session = ctx.session
+        }
+        
         let docs: any[] = []
         let uidValidity = Math.floor(Date.now() / 1000);
 
@@ -90,9 +95,9 @@ class MailboxService {
         let err: any
         let result: IMailbox[] | undefined
 
-        [err, result] = await to(this.Mailbox.create(docs))
+        [err, result] = await to(this.Mailbox.create(docs, dbCallOptions))
 
-        if(err != null){
+        if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
         }
 

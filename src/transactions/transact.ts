@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 import mongodb from 'mongodb'
 import { to } from '../utils'
 
-class MongooseTransaction {
+export class MongooseTransaction {
 
     mongoConnection: mongoose.Connection
 

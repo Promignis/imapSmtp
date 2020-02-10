@@ -1,9 +1,9 @@
 import mongoose from "mongoose"
 import { db } from '../db/connection'
 import { to } from '../utils'
-import { HTTP_STATUS, MONGO_CODES, ServerError } from '../errors'
-import mongodb from 'mongodb'
+import { HTTP_STATUS, ServerError } from '../errors'
 import { IAddress } from '../db/addresses'
+import { ServiceContext } from '../types/types'
 
 class AddressService {
 
@@ -15,13 +15,21 @@ class AddressService {
         this.Domain = domain
     }
 
-    async checkAvailibility(host: string): Promise<boolean> {
+    async checkAvailibility(ctx: ServiceContext, host: string): Promise<boolean> {
 
+        // This options has to be passed into every db call
+        // If different db calls need different options like readPreference, batchSize etc
+        // then make sure that ctx.session, if present is attached to each one of them
+        let dbCallOptions: any = {}
+        if (ctx.session){
+            dbCallOptions.session = ctx.session
+        }
+        
         let err: any
 
         let result: IAddress | null
 
-        [err, result] = await to(this.Address.findOne({"name": name}).exec())
+        [err, result] = await to(this.Address.findOne({"name": name}, dbCallOptions).exec())
 
         if(err != null){
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
@@ -35,11 +43,16 @@ class AddressService {
         return false
     }
 
-    async create(user: mongoose.Types.ObjectId, host: string): Promise<IAddress | undefined> {
+    async create(ctx: ServiceContext, user: mongoose.Types.ObjectId, host: string): Promise<IAddress | undefined> {
+
+        let dbCallOptions: any = {}
+        if (ctx.session){
+            dbCallOptions.session = ctx.session
+        }
 
         let err: ServerError | null
         let availbale: boolean | undefined
-        [err, availbale] = await to(this.checkAvailibility(host))
+        [err, availbale] = await to(this.checkAvailibility(ctx, host))
         if(err != null){
             throw err
         }
@@ -59,7 +72,7 @@ class AddressService {
 
         let queryErr: any
         let result: IAddress | undefined
-        [queryErr, availbale] = await to(doc.save().exec())
+        [queryErr, availbale] = await to(doc.save(dbCallOptions).exec())
 
         if(queryErr != null){
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, queryErr.message, queryErr.name || "")

@@ -2,8 +2,9 @@ import mongoose from "mongoose"
 import { db } from '../db/connection'
 import { to } from '../utils'
 import { HTTP_STATUS, MONGO_CODES, ServerError } from '../errors'
-import mongodb from 'mongodb'
 import { IBucket } from '../db/buckets'
+import { ServiceContext } from '../types/types'
+
 
 class BucketService {
 
@@ -15,7 +16,12 @@ class BucketService {
 
     attachmentBucketName: string = "attachment"
 
-    async createBucket(user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, name: string, options?: Object): Promise<IBucket | undefined> {
+    async createBucket(ctx: ServiceContext, user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, name: string, options?: Object): Promise<IBucket | undefined> {
+
+        let dbCallOptions: any = {}
+        if (ctx.session){
+            dbCallOptions.session = ctx.session
+        }
 
         let doc = {
             user: user,
@@ -30,7 +36,7 @@ class BucketService {
         let err: any
         let result: IBucket | undefined
 
-        [err, result] = await to(bucket.save())
+        [err, result] = await to(bucket.save(dbCallOptions))
 
         if (err != null) {
             // Note: Methods that can trigger duplicate 11000 save(), insertMany(), update(), fineOneAndUpdate(), reate()
@@ -41,7 +47,7 @@ class BucketService {
              * errmsg
              */
             if (err.name == 'MongoError' && err.code == MONGO_CODES.DUPLICATE_KEY) {
-                throw new ServerError(HTTP_STATUS.BAD_REQUEST, `Bucket with name ${name} already exists!`, err.name)
+                throw new ServerError(HTTP_STATUS.BAD_REQUEST, `Bucket with name ${name} already exists`, err.name)
             } else {
                 throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
             }
@@ -50,8 +56,8 @@ class BucketService {
         return result
     }
 
-    async createAttachmentBucket(user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, options?: Object): Promise<IBucket | undefined> {
-        return this.createBucket(user, address, this.attachmentBucketName)
+    async createAttachmentBucket(ctx: ServiceContext, user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, options?: Object): Promise<IBucket | undefined> {
+        return this.createBucket(ctx, user, address, this.attachmentBucketName)
     }
 }
 
