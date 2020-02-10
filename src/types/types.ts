@@ -9,5 +9,39 @@ export interface ServiceContext {
     // inside the transaction should be passed the transaction session
     // So when the services are called inside a transactions they will be passed
     // the session using this property of the context. 
-    session? : mongodb.ClientSession
+    session?: mongodb.ClientSession
+}
+
+export interface NewUserDetails {
+    address: string
+    tempPass: string
+}
+
+export interface UserProfile {
+    firstName: string,
+    lastName: string
+}
+
+export interface UserCreateOpts {
+    profile?: UserProfile,
+    tempPassword?: string // Initial password for the user. If not passed it will be randomly generated
+    role?: string // If not passed the default "user" role will be chosen
+}
+
+export interface UserQuotas {
+    storageQuota: number,
+    maxInbound: number,
+    maxOutbound: number
+}
+
+export interface NewUserTXOpts {
+    username: string,
+    role: string,
+    profile: UserProfile,
+    hashedPassword: string,
+    seed: string,
+    disabled: boolean,
+    settings: object,
+    quotas: UserQuotas,
+    metadata: {}
 }

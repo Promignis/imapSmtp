@@ -1,3 +1,6 @@
+import crypto from 'crypto'
+import bcrypt from 'bcrypt'
+
 // This gives better looking error handling. Can avoid using try catch everywhere with async await
 // eg: [err, result] = await to (fetch("google.com"))
 export function to<T, U = Error>(
@@ -13,4 +16,20 @@ export function to<T, U = Error>(
 
             return [err, undefined];
         });
+}
+
+
+export function generateRandomString(length: number): string {
+    // TODO: Add a more sphisticated lib to do this?
+    return crypto.randomBytes(Math.ceil(length * 0.5)).toString('hex').slice(0, length);
+}
+
+export async function bcryptHash(rawPassword: string): Promise<string>{
+    let saltRounds = 10;
+    return new Promise((res, rej) => {
+        bcrypt.hash(rawPassword, saltRounds, function(err, hash){
+            if (err) rej(err)
+            res(hash)
+        })
+    })
 }
