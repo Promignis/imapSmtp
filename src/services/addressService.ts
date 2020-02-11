@@ -7,7 +7,7 @@ import { ServiceContext } from '../types/types'
 
 class AddressService {
 
-    Address: mongoose.Model<any>
+    Address: mongoose.Model<IAddress>
     Domain: string
 
     constructor(model: mongoose.Model<any>, domain: string) {
@@ -21,43 +21,43 @@ class AddressService {
         // If different db calls need different options like readPreference, batchSize etc
         // then make sure that ctx.session, if present is attached to each one of them
         let dbCallOptions: any = {}
-        if (ctx.session){
+        if (ctx.session) {
             dbCallOptions.session = ctx.session
         }
-        
+
         let err: any
 
-        let result: IAddress | null
+        let result: any
 
-        [err, result] = await to(this.Address.findOne({"name": name}, dbCallOptions).exec())
+        [err, result] = await to(this.Address.findOne({ "name": host }, {}, dbCallOptions).exec())
 
-        if(err != null){
+        if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
         }
 
         // Null is returned if no documents were found
-        if(!result){
+        if (!result) {
             return true
         }
 
         return false
     }
 
-    async create(ctx: ServiceContext, user: mongoose.Types.ObjectId, host: string): Promise<IAddress | undefined> {
+    async create(ctx: ServiceContext, user: mongoose.Types.ObjectId, host: string): Promise<IAddress> {
 
         let dbCallOptions: any = {}
-        if (ctx.session){
+        if (ctx.session) {
             dbCallOptions.session = ctx.session
         }
 
         let err: ServerError | null
         let availbale: boolean | undefined
         [err, availbale] = await to(this.checkAvailibility(ctx, host))
-        if(err != null){
+        if (err != null) {
             throw err
         }
 
-        if(!availbale){
+        if (!availbale) {
             throw new ServerError(HTTP_STATUS.BAD_REQUEST, `Duplicate host name ${host}`, `ServerError`)
         }
 
@@ -71,15 +71,15 @@ class AddressService {
         })
 
         let queryErr: any
-        let result: IAddress | undefined
-        [queryErr, availbale] = await to(doc.save(dbCallOptions).exec())
+        let result: any
+        [queryErr, result] = await to(doc.save(dbCallOptions))
 
-        if(queryErr != null){
+        if (queryErr != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, queryErr.message, queryErr.name || "")
         }
 
-        return result
+        return <IAddress>result
     }
 }
 
-export default new AddressService(db.main.Address, <string>process.env.DOMAIN)
+export default AddressService

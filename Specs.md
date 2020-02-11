@@ -231,7 +231,7 @@ mailboxes {
     specialUse<string> // Some mailboxes in IMAP server are defined to be special-use, which is used by the IMAP client to configure it self. Its described in RFC6154](https://tools.ietf.org/html/rfc6154)
     delimiter<string> // This is used to define hierarchy, for example INBOX/work. The same hierarchy delimiter character is used for all levels of hierarchy within a single mailbox, RFC3501](https://tools.ietf.org/html/rfc3501), section 5.1 
     uidValidity<int32> // Needed for IMAP server. As specified in [RFC3501](https://tools.ietf.org/html/rfc3501), section 2.3.1.1
-    udiNext<int32> // Will be used to maintain a valid uidValidity
+    uid<int32> // Will be used to maintain a valid uidValidity
     modifyIndex<int64> //  Will be used to maintain a valid uidValidity
     subscribed<bool> // Needed for IMAP server. Set true when the mailbox is subscibed to by the client. In IMAP, subscriptions are used as a way of marking which folders should be displayed by IMAP. Client can unsubscribe if needed.
     retention<bool> // Its true for mailboxes like TRASH, where messages have a temporary retention and deleted after the `retentionTime` expires

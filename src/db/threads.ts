@@ -4,6 +4,15 @@ import { ModelData, ModelIndex } from './types'
 const Schema = mongoose.Schema;
 const modelName = "Thread"
 
+export interface IThreads extends mongoose.Document {
+    user: mongoose.Types.ObjectId,
+    address: mongoose.Types.ObjectId,
+    subject: string,
+    referenceIds: string[],
+    participents: string[],
+    metadata: object
+}
+
 var threadSchema = new Schema({
     user: {
         type: Schema.Types.ObjectId,

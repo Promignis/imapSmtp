@@ -1,6 +1,12 @@
 import mongoose from 'mongoose'
 import { ModelData, ModelIndex } from './types'
 
+export interface IEvents extends mongoose.Document {
+    user: mongoose.Types.ObjectId,
+    action: string,
+    metadata: object
+}
+
 const Schema = mongoose.Schema;
 const modelName = "Event"
 

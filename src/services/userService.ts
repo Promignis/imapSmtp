@@ -1,130 +1,70 @@
 import mongoose from "mongoose"
-import mongodb from 'mongodb'
-import { db } from '../db/connection'
-import { to, generateRandomString, bcryptHash } from '../utils'
-import { HTTP_STATUS, ServerError } from '../errors'
-import { ROLES } from './roles'
+import { to } from '../utils'
+import { HTTP_STATUS, ServerError, MONGO_CODES } from '../errors'
 import { IUser } from '../db/users'
-import { createNewUserTX } from '../transactions/createNewUser'
 import {
-    NewUserDetails,
-    UserProfile,
-    UserCreateOpts,
-    UserQuotas,
-    NewUserTXOpts,
     ServiceContext
 } from '../types/types'
 
 class UserService {
 
-    User: mongoose.Model<any>
+    User: mongoose.Model<IUser>
 
     constructor(model: mongoose.Model<any>) {
         this.User = model
     }
 
-    // TODO: Update default quotas and settings based on requirements. 
-    // TODO: Pick these up from config in the future
-    defaultQuotas: UserQuotas = {
-        storageQuota: Number.MAX_VALUE,
-        maxInbound: Number.MAX_VALUE,
-        maxOutbound: Number.MAX_VALUE
-    }
-
     defaultSettings = {}
 
-    async newUser(ctx: ServiceContext, host: string, options?: UserCreateOpts): Promise<NewUserDetails> {
+    async create(ctx: ServiceContext, user: any, options?: any): Promise<IUser> {
 
         let dbCallOptions: any = {}
         if (ctx.session) {
             dbCallOptions.session = ctx.session
         }
 
-        // Check if a user exists with this name
+        let newUser = new this.User(user.properties)
+        // If id is passed then replace the default created id with it
+        if (user.id) newUser._id = user.id;
+
         let err: any
-        let existingUser: IUser | null
+        let res: any
 
-        [err, existingUser] = await to(this.User.findOne({ 'username': host }, dbCallOptions).exec())
-
-        if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.Name || "")
-        }
-
-        if (existingUser) {
-            throw new ServerError(HTTP_STATUS.BAD_REQUEST, `User with username ${host} alllredy exists.`, err.Name || "")
-        }
-
-        // If no existing user with this host then start new creation process
-
-        let passwordString: string = options && options.tempPassword ? options.tempPassword : generateRandomString(10)
-        let profile: UserProfile = options && options.profile ? options && options.profile : {
-            firstName: "",
-            lastName: ""
-        }
-        let role = options && options.role ? options.role : ROLES.USER
-
-        // Hash password
-        let hashedPassword: any
-        [err, hashedPassword] = await to(bcryptHash(passwordString))
-
-        if(err != null){    
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, `ServerError`)
-        }
-        
-        let seed = ""
-        // Create user doc
-        let opts: NewUserTXOpts = {
-            username: host,
-            role,
-            profile,
-            hashedPassword,
-            seed,
-            disabled: false,
-            settings: {},
-            quotas: this.defaultQuotas,
-            metadata: {}
-        }
-
-        let txRes: any
-
-        [err, txRes] = await to(createNewUserTX(this.User, opts))
+        [err, res] = await to(newUser.save(dbCallOptions))
 
         if (err != null) {
-            if (err instanceof ServerError) {
-                throw err
+            if (err.name == 'MongoError' && err.code == MONGO_CODES.DUPLICATE_KEY) {
+                throw new ServerError(HTTP_STATUS.BAD_REQUEST, `Bucket with name ${name} already exists`, err.name)
             } else {
                 throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
             }
         }
 
-        // User creation successfull
-
-        let userDetails: NewUserDetails = {
-            address: txRes,
-            tempPass: passwordString,
-        }
-
-        return userDetails
+        return newUser
     }
 
-    async makeSuperUser(ctx: ServiceContext, username: string, password: string): Promise<void> {
-        const role = <string>ROLES.ADMIN
+    async checkAvailibility(ctx: ServiceContext, username: string): Promise<boolean> {
 
-        let options: UserCreateOpts = {
-            tempPassword: password,
-            role: role
+        let dbCallOptions: any = {}
+        if (ctx.session) {
+            dbCallOptions.session = ctx.session
         }
 
         let err: any
-        let res: any
+        let existingUser: any
 
-        [err, res] = await to(this.newUser(ctx, username, options))
+        [err, existingUser] = await to(this.User.findOne({ 'username': username }, {}, dbCallOptions).exec())
 
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name)
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.Name || "")
         }
 
+        if (!existingUser) {
+            return true
+        }
+
+        return false
     }
 }
 
-export default new UserService(db.main.User)
+export default UserService

@@ -33,15 +33,3 @@ export interface UserQuotas {
     maxInbound: number,
     maxOutbound: number
 }
-
-export interface NewUserTXOpts {
-    username: string,
-    role: string,
-    profile: UserProfile,
-    hashedPassword: string,
-    seed: string,
-    disabled: boolean,
-    settings: object,
-    quotas: UserQuotas,
-    metadata: {}
-}

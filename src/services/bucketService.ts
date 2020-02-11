@@ -8,7 +8,7 @@ import { ServiceContext } from '../types/types'
 
 class BucketService {
 
-    Bucket: mongoose.Model<any>
+    Bucket: mongoose.Model<IBucket>
 
     constructor(model: mongoose.Model<any>) {
         this.Bucket = model
@@ -16,10 +16,10 @@ class BucketService {
 
     attachmentBucketName: string = "attachment"
 
-    async createBucket(ctx: ServiceContext, user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, name: string, options?: Object): Promise<IBucket | undefined> {
+    async createBucket(ctx: ServiceContext, user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, name: string, options?: Object): Promise<IBucket> {
 
         let dbCallOptions: any = {}
-        if (ctx.session){
+        if (ctx.session) {
             dbCallOptions.session = ctx.session
         }
 
@@ -34,7 +34,7 @@ class BucketService {
         let bucket = new this.Bucket(doc)
 
         let err: any
-        let result: IBucket | undefined
+        let result: any
 
         [err, result] = await to(bucket.save(dbCallOptions))
 
@@ -61,4 +61,5 @@ class BucketService {
     }
 }
 
-export default new BucketService(db.main.Bucket)
+// export default new BucketService(db.main.models.Bucket)
+export default BucketService

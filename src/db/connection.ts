@@ -1,7 +1,10 @@
 import mongoose from 'mongoose'
 import config from '../config'
 import logger from '../logger'
-import { ModelData } from './types'
+import {
+    ModelData,
+    DB
+} from './types'
 import userModel from './users'
 import attachmentModel from './attachments'
 import bucketsModel from './buckets'
@@ -10,6 +13,7 @@ import messagesModel from './messages'
 import addressesModel from './addresses'
 import threadModel from './threads'
 import eventsModel from './eventlogs'
+// Wrapping a plugin inside fastifyPlugin makes sure that it is accessible in the same context where you require them
 import fastifyPlugin from 'fastify-plugin'
 
 const connectionSettings = {
@@ -95,11 +99,7 @@ if (attachmentDBEnabled) {
     })
 }
 
-async function createConnection(connParams: connectionParams[]): Promise<connections | null> {
-
-    if (connParams.length == 0) {
-        return null
-    }
+async function createConnection(connParams: connectionParams[]): Promise<connections> {
 
     let connections: connections = {} as connections
 
@@ -136,7 +136,6 @@ function createModels(conn: mongoose.Connection, modelData: ModelData[]): { [nam
 
     // Add indexes
     modelData.forEach(m => {
-        console.log(m.name, " :- adding index for")
         m.indexes.forEach(index => {
             m.schema.index(index.fields, index.options)
         });
@@ -155,8 +154,7 @@ let decorator: any = {}
 
 async function setupMongoDBPlugin(fastify: any, { }) {
 
-    let dbConnections: connections | null = {} as connections
-
+    let dbConnections: connections
     try {
         dbConnections = await createConnection(connectionParams)
     } catch (e) {
@@ -165,14 +163,13 @@ async function setupMongoDBPlugin(fastify: any, { }) {
         throw e
     }
 
-    let decorator: any = {}
-
     // Decorate
     if (dbConnections != null && Object.keys(dbConnections).length != 0) {
         // decorator = dbConnections
         Object.keys(dbConnections).forEach(dbName => {
             decorator[dbName] = {
-                connection: dbConnections!.dbName.connection, ...dbConnections!.dbName.models
+                connection: dbConnections[dbName]["connection"],
+                models: dbConnections[dbName]["models"]
             }
         })
     }
@@ -183,24 +180,26 @@ async function setupMongoDBPlugin(fastify: any, { }) {
      * db: {
      *  app: {
      *      connection: <mongoose connection obj>
-     *      <Modelname>: <mongoose model obj>
+     *      models: {
+     *          <Modelname>: <mongoose model obj>
+     *      }
      *   },
      *  <other db name>: {
      *      ... same as above
      *  }
      * }
      */
-    fastify.decorate("db", decorator);
+    fastify.decorate("db", <DB>decorator);
 
     // Close connection when app is closing
     fastify.addHook("onClose", (fastify: any, done: Function) => {
         fastify.mongoose.instance.connection.on("close", function () {
-            done();
+            done()
         });
         fastify.mongoose.instance.connection.close();
     });
 }
 
 export const mongoosePlugin = fastifyPlugin(setupMongoDBPlugin)
-export const db = decorator
+export const db = <DB>decorator
 

@@ -12,13 +12,13 @@ export interface IMailbox extends mongoose.Document {
     specialUse: string,
     delimiter: string,
     uidValidity: number,
-    udiNext: number
+    uidNext: number
     modifyIndex: number
     subscribed: number
     retention: boolean,
     retentionTime: Date,
     metadata: object
-} 
+}
 
 var mailboxesSchema = new Schema({
     user: {
@@ -31,29 +31,29 @@ var mailboxesSchema = new Schema({
         ref: 'Address',
         required: true
     },
-    name: {type: String, required: true},
-    imapName: {type: String, required: true},
-    specialUse: {type: String},
-    delimiter: {type: String},
-    uidValidity: {type: Number, required: true},
-    udiNext: {type: Number, required: true},
-    modifyIndex: {type: Number, required: true},
-    subscribed: {type: Boolean},
-    retention: {type: Boolean},
-    retentionTime: {type: Date},
-    metadata: {type: Object}
+    name: { type: String, required: true },
+    imapName: { type: String, required: true },
+    specialUse: { type: String },
+    delimiter: { type: String },
+    uidValidity: { type: Number, required: true },
+    uidNext: { type: Number, required: true },
+    modifyIndex: { type: Number, required: true },
+    subscribed: { type: Boolean },
+    retention: { type: Boolean },
+    retentionTime: { type: Date },
+    metadata: { type: Object }
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
-    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt'},
+    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
     collection: "mailboxes"
 })
 
 const indexes: ModelIndex[] = [
-    {fields: { user: 1 }},
-    {   
+    { fields: { user: 1 } },
+    {
         // A combination of address user and mailbox name should be unique
         fields: { address: 1, user: 1, name: 1 },
-        options: {unique: true}
+        options: { unique: true }
     }
 ]
 
