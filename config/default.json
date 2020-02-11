@@ -1,9 +1,9 @@
-{   
+{
     "server": {
         "port": 8080
     },
-    "logger":{
-        "logDirectory" : "/home/logs/bizgaze/",
+    "logger": {
+        "logDirectory": "/home/logs/bizgaze/",
         "logFile": "server.log",
         "rotationFrequency": "24h",
         "maxLogFilesNumber": null,
@@ -13,7 +13,7 @@
         "host": "cluster0-shard-00-01-6xhys.gcp.mongodb.net:27017,cluster0-shard-00-00-6xhys.gcp.mongodb.net:27017,cluster0-shard-00-02-6xhys.gcp.mongodb.net:27017",
         "username": "test1",
         "password": "123456qwerty",
-        "name": "app",
+        "name": "main",
         "connection": {
             "connectionPoolSize": 10,
             "initialConnectionTimeOut": 20000,
@@ -22,13 +22,13 @@
         },
         "attachmentdb": {
             "enabled": true,
-            "name": "apptwo",
+            "name": "attach",
             "host": "cluster0-shard-00-01-6xhys.gcp.mongodb.net:27017,cluster0-shard-00-00-6xhys.gcp.mongodb.net:27017,cluster0-shard-00-02-6xhys.gcp.mongodb.net:27017",
             "username": "test1",
             "password": "123456qwerty"
         }
     },
-    "redis":{
+    "redis": {
         "url": ""
     }
 }
