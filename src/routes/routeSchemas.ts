@@ -5,8 +5,8 @@ export const userCreateSchema = {
         type: 'object',
         required: ['username', 'tempPassword', 'firstname', 'lastname', 'role'],
         properties: {
-            username: { type: 'string' },
-            tempPassword: { type: 'string' },
+            username: { type: 'string', minLength: 4 },
+            tempPassword: { type: 'string', minLength: 8 },
             firstName: { type: 'string' },
             lastName: { type: 'string' },
             role: {

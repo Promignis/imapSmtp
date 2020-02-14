@@ -51,7 +51,7 @@ server.register(transactionPlugin)
 server.setErrorHandler(globalErrorHandler)
 
 // Register the routes
-server.get('/test', (request, reply) => { reply.status(200).send({ "test": "success" }) })
+
 server.register(userRoutes, { prefix: '/api/v1/user' })
 
 

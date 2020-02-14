@@ -1,4 +1,4 @@
-import { ServerError, HTTP_STATUS } from '../errors'
+import { ServerError, HTTP_STATUS, INT_ERRORS } from '../errors'
 import { UserCreateOpts, UserProfile } from '../types/types'
 import { to } from '../utils'
 
@@ -9,11 +9,13 @@ import { to } from '../utils'
 export function create(fastify: any): any {
     return async (req: any, reply: any) => {
         let f: any = fastify
+
         if (req.validationError) {
+            // [{},{}]
             throw new ServerError(
                 HTTP_STATUS.BAD_REQUEST,
                 req.validationError.validation,
-                'ValidationError'
+                INT_ERRORS.API_VALIDATION_ERR
             )
         }
         const { username, tempPassword, firstname, lastname, role } = req.body

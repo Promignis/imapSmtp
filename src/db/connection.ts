@@ -174,7 +174,7 @@ async function setupMongoDBPlugin(fastify: any, { }) {
         })
     }
 
-    // Will be used like: fastify.db.app.User.save({}) or fastify.db.attachments.Attachment.find({})
+    // Will be used like: fastify.db.app.models.User.save({}) or fastify.db.models.attachments.Attachment.find({})
     /**
      * Decorated value: 
      * db: {
