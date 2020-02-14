@@ -1,0 +1,16 @@
+syntax= "proto3";
+
+service MailService {
+  rpc CheckValidity (ValidityReq) returns (ValidityRes) {}
+}
+
+message ValidityReq {
+  string address = 1;
+}
+
+// This is pretty limited for now
+// in future more checks will be made like quta and rate limit settings etc
+// For now just return a boolean 
+message ValidityRes {
+  bool valid = 1;
+}

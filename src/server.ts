@@ -6,8 +6,10 @@ import swagger from 'fastify-swagger'
 import { mongoosePlugin } from './db/connection'
 import { servicesPlugin } from './services/servicePlugin'
 import { transactionPlugin } from './transactions/transactionPlugin'
+import { setupGrpcPlugin } from './proto/grpcPlugin'
 import { globalErrorHandler } from './handlers/errorHandlers'
 import userRoutes from './routes/userRoutes'
+import grpc from 'grpc'
 
 
 // If using http2 we'd pass <http2.Http2Server, http2.Http2ServerRequest, http2.Http2ServerResponse>
@@ -50,8 +52,10 @@ server.register(transactionPlugin)
 // But id they are added they will override this handler
 server.setErrorHandler(globalErrorHandler)
 
-// Register the routes
+// Setup grpc
+server.register(setupGrpcPlugin)
 
+// Register the routes
 server.register(userRoutes, { prefix: '/api/v1/user' })
 
 
@@ -61,6 +65,24 @@ const startHTTPServer = async () => {
         await server.listen(port, "127.0.0.1");
     } catch (e) {
         server.log.error("Could not serve: ", e)
+        process.exit(1)
+    }
+}
+
+export const startGrpcServer = async () => {
+
+    let fastify: any = server
+    let grpcApp = fastify.grpcApp
+
+    try {
+        let status: any = grpcApp.start('0.0.0.0:50051')
+        if (status.started) {
+            server.log.info(`Grpc Server listening on 0.0.0.0:50051`)
+        } else {
+            throw new Error('Bad grpc server status')
+        }
+    } catch (e) {
+        server.log.error("Grpc server Could not serve: ", e)
         process.exit(1)
     }
 }

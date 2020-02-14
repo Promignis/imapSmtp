@@ -15,7 +15,7 @@ class AddressService {
         this.Domain = domain
     }
 
-    async checkAvailibility(ctx: ServiceContext, host: string): Promise<boolean> {
+    async checkAvailibility(ctx: ServiceContext, host: string): Promise<IAddress | null> {
 
         // This options has to be passed into every db call
         // If different db calls need different options like readPreference, batchSize etc
@@ -37,10 +37,10 @@ class AddressService {
 
         // Null is returned if no documents were found
         if (!result) {
-            return true
+            return null
         }
 
-        return false
+        return result
     }
 
     async create(ctx: ServiceContext, user: mongoose.Types.ObjectId, host: string): Promise<IAddress> {
@@ -51,13 +51,13 @@ class AddressService {
         }
 
         let err: ServerError | null
-        let availbale: boolean | undefined
+        let availbale: any
         [err, availbale] = await to(this.checkAvailibility(ctx, host))
         if (err != null) {
             throw err
         }
 
-        if (!availbale) {
+        if (availbale != null) {
             throw new ServerError(HTTP_STATUS.BAD_REQUEST, `Duplicate host name ${host}`, `ServerError`)
         }
 
