@@ -24,8 +24,6 @@ async function setupGrpcServer(fastify: any, { }, done: Function) {
 }
 
 function checkValidity(fastify: any) {
-    // Can't use async await with grpc handelers
-    // In future can shift to Mali package that supports async/await with grpc
     return async function (ctx: any) {
         let f: any = fastify
         let address: string = ctx.request.req.address
@@ -47,6 +45,9 @@ function checkValidity(fastify: any) {
         if (addressResult == null) {
             available = true
         }
+
+        // TODO: Also check if the user for this adress is disabled or not
+        // If disabled the hook should be invalidated with error "550, Mailbox disabled". Refer "haraka-dsn" package 
 
         ctx.res = {
             valid: !available

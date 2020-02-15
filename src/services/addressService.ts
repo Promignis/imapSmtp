@@ -15,7 +15,7 @@ class AddressService {
         this.Domain = domain
     }
 
-    async checkAvailibility(ctx: ServiceContext, host: string): Promise<IAddress | null> {
+    async checkAvailibility(ctx: ServiceContext, address: string): Promise<IAddress | null> {
 
         // This options has to be passed into every db call
         // If different db calls need different options like readPreference, batchSize etc
@@ -29,7 +29,7 @@ class AddressService {
 
         let result: any
 
-        [err, result] = await to(this.Address.findOne({ "name": host }, {}, dbCallOptions).exec())
+        [err, result] = await to(this.Address.findOne({ "address": address }, {}, dbCallOptions).exec())
 
         if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
@@ -50,15 +50,17 @@ class AddressService {
             dbCallOptions.session = ctx.session
         }
 
+        let newAddress: string = `${host}@${this.Domain}`
+
         let err: ServerError | null
         let availbale: any
-        [err, availbale] = await to(this.checkAvailibility(ctx, host))
+        [err, availbale] = await to(this.checkAvailibility(ctx, newAddress))
         if (err != null) {
             throw err
         }
 
         if (availbale != null) {
-            throw new ServerError(HTTP_STATUS.BAD_REQUEST, `Duplicate host name ${host}`, `ServerError`)
+            throw new ServerError(HTTP_STATUS.BAD_REQUEST, `Duplicate host name ${host} for domain ${this.Domain}`, `ServerError`)
         }
 
         let doc = new this.Address({

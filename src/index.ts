@@ -13,6 +13,20 @@ if (!validConf.valid) {
     process.exit(1)
 }
 
+const MUST_HAVE_ENV = ["DOMAIN"]
+let missingEnv = false
+
+MUST_HAVE_ENV.forEach(env => {
+    if (!process.env[env]) {
+        missingEnv = true
+        console.error(`No env variable found. Problems with following: ${env}`)
+    }
+})
+// Check if env present
+if (missingEnv) {
+    process.exit(1)
+}
+
 import * as os from 'os'
 import cluster from 'cluster'
 import start from './startServices'
@@ -28,7 +42,7 @@ if (process.env.MULTI_CORE == 'true') {
 
         let forkWorker = () => {
             let worker = cluster.fork()
-        workers.add(worker)
+            workers.add(worker)
             console.info(`Forked worker ${worker.process.pid}`)
         }
 
@@ -46,6 +60,6 @@ if (process.env.MULTI_CORE == 'true') {
     } else {
         start()
     }
-}else{
+} else {
     start()
 }
