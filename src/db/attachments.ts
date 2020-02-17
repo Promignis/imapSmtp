@@ -12,10 +12,7 @@ var attachmentsSchema = new Schema({
     filename: { type: String },
     contentType: { type: String },
     aliases: { type: [String] },
-    metadata: { 
-        bucket: {
-            type: Schema.Types.ObjectId
-        },
+    metadata: {
         count: {
             type: Number
         }

@@ -28,6 +28,7 @@ class BucketService {
             address: address,
             name: name,
             size: 0,
+            files: [],
             metadata: {}
         }
 

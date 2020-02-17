@@ -10,7 +10,7 @@ export interface IBucket extends mongoose.Document {
     name: string,
     size: number,
     metadata: object
-} 
+}
 
 var bucketSchema = new Schema({
     user: {
@@ -24,11 +24,12 @@ var bucketSchema = new Schema({
         required: true
     },
     name: { type: String, required: true },
-    size: {type: Number},
+    size: { type: Number },
+    files: { type: Array, "default": [] },
     metadata: { type: Object }
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
-    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt'},
+    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
     collection: "buckets"
 })
 
@@ -37,7 +38,7 @@ const indexes: ModelIndex[] = [
         fields: { user: 1 },
     },
     {
-        fields: {address: 1, user: 1, name: 1},
+        fields: { address: 1, user: 1, name: 1 },
         options: {
             unique: true
         }
