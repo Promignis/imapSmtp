@@ -263,5 +263,6 @@ buckets {
     name<string>
     size<int64> // Bytes
     metadata<map<string, string>>
+    files: [<ObjectId>] // array of file object references
 }
 ```
