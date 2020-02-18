@@ -263,6 +263,7 @@ buckets {
     name<string>
     size<int64> // Bytes
     metadata<map<string, string>>
+    // TODO: In future , can have an file abstraction over fridfs documents instead of directly refering to gridfs documents in the files array.
     files: [<ObjectId>] // array of file object references
 }
 ```

@@ -22,12 +22,11 @@ export interface GridFSOpts {
     bucketName?: string
     db: mongodb.Db
     chunkSizeBytes?: number
-    bucket: mongodb.GridFSBucket
     writeConcern?: string
 }
 
 export interface GridFSWriteOpts {
-    id?: string
+    id?: mongoose.Types.ObjectId
     filename: string
     metadata?: object
     contentType?: string

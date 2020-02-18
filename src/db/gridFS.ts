@@ -72,7 +72,7 @@ class GridFS {
     async getFile(filter: any): Promise<object | null> {
         let file = await this.bucket.find(filter, { limit: 1 }).toArray()
 
-        if(!file){
+        if (!file) {
             return null
         }
         return file
@@ -85,8 +85,8 @@ class GridFS {
 
         let file = await this.bucket.find(filter, options).toArray()
 
-        if(!file){
-           file = []
+        if (!file) {
+            file = []
         }
 
         return file

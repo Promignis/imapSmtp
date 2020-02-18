@@ -1,5 +1,5 @@
-import mongoose from 'mongoose'
 import mongodb from 'mongodb'
+import mongoose from 'mongoose'
 
 // TODO: Move types to different folder and have an index exporting all 
 // as this file can get quiet big
@@ -32,4 +32,10 @@ export interface UserQuotas {
     storageQuota: number,
     maxInbound: number,
     maxOutbound: number
+}
+
+export interface AttachmentInfo {
+    filename: string,
+    count: number,
+    contentType: string
 }

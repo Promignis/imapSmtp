@@ -1,9 +1,5 @@
 syntax= "proto3";
 
-service MailService {
-  rpc CheckValidity (ValidityReq) returns (ValidityRes) {}
-}
-
 message ValidityReq {
   string address = 1;
 }
@@ -13,4 +9,19 @@ message ValidityReq {
 // For now just return a boolean 
 message ValidityRes {
   bool valid = 1;
+}
+
+message UploadedFileId {
+  string id = 1;
+}
+
+message Chunk {
+  bytes chunk = 1;
+}
+
+service MailService {
+  rpc CheckValidity (ValidityReq) returns (ValidityRes) {}
+  // File info and content type will be passed in metadata
+  // If these are not passed then error will be sent back
+  rpc UploadAttachment(stream Chunk) returns (UploadedFileId) {}
 }

@@ -4,6 +4,17 @@ import { ModelData, ModelIndex } from './types'
 const Schema = mongoose.Schema;
 const modelName = "Attachment"
 
+export interface IAttachment extends mongoose.Document {
+    length: number,
+    chunkSize: number,
+    uploadDate: Date,
+    md5: string,
+    filename: string,
+    contentType: string,
+    aliases: string[],
+    metadata: object,
+}
+
 var attachmentsSchema = new Schema({
     length: { type: Number },
     chunkSize: { type: Number },
