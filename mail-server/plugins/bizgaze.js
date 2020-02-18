@@ -6,6 +6,7 @@ const pcli = require('grpc-promise')
 var libmime = require('libmime');
 const uuidv4 = require('uuid/v4');
 var mime = require('mime-types')
+var addrparser = require('address-rfc2822');
 
 exports.setupProtoClient = function (server, next) {
     const plugin = this;
@@ -107,85 +108,164 @@ exports.hook_rcpt_ok = function (next, connection, params) {
 }
 
 exports.hook_queue = function (next, connection, params) {
-    let plugin = this
-    const transaction = connection.transaction
-    connection.loginfo("inside queue")
-    next()
+    const txn = connection.transaction
+    const body = txn.body
+    const header = txn.header
+    let attachments = txn.notes.attachment.attachments
+
+    const headerTuples = Object.keys(header.headers_decoded).reduce((acc, key) => {
+        let value = header.headers_decoded[key]
+        if (value.length > 1) {
+            value = value.join("\n")
+        } else {
+            value = value[0]
+        }
+        acc[key] = value
+        return acc
+    }, {})
+
+    let info = {}
+    Object.keys(headerTuples).map(key => {
+
+        // takes the value: 'name <address@a.com>, name2 <address2@a.com>'
+        // and converts it to
+        // [{name: name, address: address@a.com},{name: name2, address: address2@a.com}]
+        // Note: Bcc header is mostly never present. 
+        if (['from', 'to', 'cc', 'bcc'].includes(key)) {
+            info[key] = addrparser.parse(headerTuples[key]).map(adr => {
+                return adr.address
+            })
+        }
+    })
+
+    let addresses = txn.notes.targets.addresses
+    let unique = new Set()
+    addresses.forEach(a => {
+        unique.add(a)
+    })
+
+    let extractedInfo = extBody(body)
+    let related = extractedInfo.hasRelatedNode
+
+    // Add appropriate relate fields to attachments
+    attachments = attachments.map(att => {
+        if (related) {
+            att['related'] = att.contentId != ''
+        } else {
+            att['related'] = false
+        }
+
+        return att
+    })
+
+    // Build payload
+    let mailData = {
+        uniquercpt: Array.from(unique),
+        size: txn.data_bytes, // Total size of the email,
+        parsedHeaders: headerTuples,
+        body: extractedInfo.parsedBody,
+        attachments: attachments,
+        from: info.from,
+        to: info.to,
+        cc: info.cc || [],
+        bcc: info.bcc || []
+    }
+
+    // Call grpc
+    ps(this.grpcClient, this.grpcClient.saveInbound, mailData)
+        .then(resp => {
+            // Response is empty in case of successfull saving
+            next()
+        })
+        .catch(e => {
+            connection.logerror(`Error Saving email: ${e.toString()}`)
+            next(DENY, `Error processing the email.`)
+        })
 }
 
 /**
  * Plugin Helper methods
  */
 
-const extractBody = (body, headers = false) => {
-    return {
-        headers: headers ? body.header : "",
-        is_html: body.is_html,
-        content_type: processContentType(body.ct),
-        body_encoding: body.body_encoding,
-        body_text: body.bodytext,
-        children: body.children.map((body) => extractBody(body, true))
-    }
-}
+const extBody = (body) => {
+    // If any one of the parent nodes is of type 'multipart/related' and the content-id header is present
+    // then that attachment should be marked as related
+    let hasRelatedNode = false
 
-function processContentType(headerValue) {
-    let data = {
-        value: '',
-        type: '',
-        subtype: '',
-        params: {}
-    };
-    let match;
-    let processEncodedWords = {};
+    const headersToExtract = [
+        {
+            headerName: 'content-type',
+            proto: 'contentType'
+        },
+        {
+            headerName: 'content-description',
+            proto: 'contentDescription'
+        },
+        {
+            headerName: 'content-disposition',
+            proto: 'contentDisposition'
+        },
+        {
+            headerName: 'content-transfer-encoding',
+            proto: 'contentTransferEncoding'
+        },
+        {
+            headerName: 'content-id',
+            proto: 'contentId'
+        },
+    ]
 
-    (headerValue || '').split(';').forEach((part, i) => {
-        let key, value;
-        if (!i) {
-            data.value = part.trim();
-            data.subtype = data.value.split('/');
-            data.type = (data.subtype.shift() || '').toLowerCase();
-            data.subtype = data.subtype.join('/');
-            return;
-        }
-        value = part.split('=');
-        key = (value.shift() || '').trim().toLowerCase();
-        value = value.join('=').replace(/^['"\s]*|['"\s]*$/g, '');
-
-        // Do not touch headers that have strange looking keys
-        if (/[^a-zA-Z0-9\-*]/.test(key) || key.length >= 100) {
-            return;
-        }
-
-        // This regex allows for an optional trailing asterisk, for headers
-        // which are encoded with lang/charset info as well as a continuation.
-        // See https://tools.ietf.org/html/rfc2231 section 4
-        // TODO: This does not take into accont the case when Character set and language
-        // information may be combined with the parameter continuation mechanism (4.1)
-        // Add that if its needed. Wild duck does not do it.
-        if ((match = key.match(/^([^*]+)\*(\d)?\*?$/))) {
-            if (!processEncodedWords[match[1]]) {
-                processEncodedWords[match[1]] = [];
-            }
-            processEncodedWords[match[1]][Number(match[2]) || 0] = value;
+    function extract(body, extractHeaders = false) {
+        let headers = {}
+        if (extractHeaders) {
+            headersToExtract.forEach(header => {
+                if (body.header.headers_decoded[header.headerName] && body.header.headers_decoded[header.headerName][0]) {
+                    if (header.headerName == 'content-type' || header.headerName == 'content-description' || header.headerName == 'content-disposition') {
+                        headers[header.proto] = libmime.parseHeaderValue(body.header.headers_decoded[header.headerName][0])
+                    } else if (header.headerName == 'content-transfer-encoding') {
+                        headers[header.proto] = body.header.headers_decoded[header.headerName][0]
+                    } else {
+                        headers[header.proto] = body.header.headers_decoded[header.headerName][0].trim()
+                            .replace(/^<|>$/g, '')
+                            .trim()
+                    }
+                }
+            })
         } else {
-            data.params[key] = value;
+            headers['root'] = true
         }
-        data.hasParams = true;
-    });
 
-    // convert extended mime word into a regular one
-    Object.keys(processEncodedWords).forEach(key => {
-        let charset = '';
-        let value = '';
-        processEncodedWords[key].forEach(val => {
-            let parts = val.split("'"); // eslint-disable-line quotes
-            charset = charset || parts.shift();
-            value += (parts.pop() || '').replace(/%/g, '=');
-        });
-        data.params[key] = '=?' + (charset || 'ISO-8859-1').toUpperCase() + '?Q?' + value + '?=';
-    });
+        let isHTML = body.is_html
 
-    return data;
+        let contentType = libmime.parseHeaderValue(body.ct)
+
+        if (contentType.value == 'multipart/related') {
+            hasRelatedNode = true
+        }
+
+        let bodyEncoding = body.body_encoding
+
+        let bodyText = body.bodytext
+
+        let children = body.children.map((body) => extract(body, true))
+
+        return {
+            headers,
+            isHTML,
+            contentType,
+            bodyEncoding,
+            bodyText,
+            children
+        }
+    }
+
+    // For the root node don't extract headers
+    let parsedBody = extract(body, false)
+
+    return {
+        hasRelatedNode,
+        parsedBody
+    }
 }
 
 function start_att(connection, ct, fn, body, stream, grpcClient) {
@@ -202,7 +282,11 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
      *      }
      * }
      */
+
+    // If content type header does not exist then smtp server will implicltly ignore the attachment
+    // If content type header exists but is maybe empty then default value is used
     let contentType = libmime.parseHeaderValue(attachmentHeaders['content-type'][0] || 'application/octet-stream') // If content type is not found then default to application/octet-stream
+
     let contentDsiposition
     // If content disposition is not present then default it to 'attachment'
     // refer: https://tools.ietf.org/html/rfc6266
@@ -211,8 +295,16 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     } else {
         contentDsiposition = libmime.parseHeaderValue('attachment')
     }
-    let contentTransferEncoding = attachmentHeaders['content-transfer-encoding'][0] || '' // Can't default, if not present the transfer encoding was unknown
-    // eg. [ '<ii_k6kzsw380>' ]. Remove < and >
+
+    let contentTransferEncoding
+    if (attachmentHeaders['content-transfer-encoding']) {
+        // Can't default, if not present the transfer encoding was unknown
+        contentTransferEncoding = attachmentHeaders['content-transfer-encoding'][0] || ''
+    } else {
+        contentTransferEncoding = ''
+    }
+
+    // eg. content-id: [ '<ii_k6kzsw380>' ]. Remove < and >
     let contentId
     if (attachmentHeaders['content-id']) {
         contentId = attachmentHeaders['content-id'][0] ?
@@ -246,6 +338,7 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
         contentType,
         contentDsiposition,
         contentTransferEncoding,
+        contentId
     }
 
     const txn = connection.transaction;

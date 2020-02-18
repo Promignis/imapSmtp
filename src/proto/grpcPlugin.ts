@@ -16,8 +16,13 @@ async function setupGrpcServer(fastify: any, { }, done: Function) {
     // Setup handlers
     const checkValidityhandler = checkValidity(fastify)
     const uploadAttachmentHandler = uploadAttachment(fastify)
+    const saveInboundHandler = saveInbound(fastify)
     // Setup server
-    app.use({ checkValidity: checkValidityhandler, uploadAttachment: uploadAttachmentHandler })
+    app.use({
+        checkValidity: checkValidityhandler,
+        uploadAttachment: uploadAttachmentHandler,
+        saveInbound: saveInboundHandler
+    })
 
     // Decorate fastify instance
     fastify.decorate('grpcApp', app)
@@ -127,6 +132,14 @@ class Transformer extends Transform {
 
     _transform(chunk: any, encoding: any, callback: any) {
         callback(null, chunk)
+    }
+}
+
+function saveInbound(fastify: any) {
+    return async function saveInboundHandler(ctx: any) {
+        console.log(ctx.request.req)
+
+        ctx.res = {} // Empty
     }
 }
 

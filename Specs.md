@@ -203,15 +203,12 @@ messages{
         isHTML<bool>
         contentType {
             value<string>
-            subtype<string>
-            type<string>
             params<map<string,string>> // Can be nill for certain content types
         }
         bodyEncoding<string>
         bodyContent<string>
-        children<body> // Message body can have many nested levels.If children is `null` that means its the end of nesting.
+        children<body[]> // Message body can have many nested levels.If children is `null` that means its the end of nesting.
     }
-    envelop<map<string,string>> // message envelope
     mailbox_id<bson> // Mailbox id of the mailbox the message is currently in
     user_is<bson>
     address_id<bson>

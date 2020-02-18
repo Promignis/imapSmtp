@@ -22,6 +22,7 @@ var messageSchema = new Schema({
             contentDisposition: { type: String },
             contentType: { type: String, required: true },
             transferEncoding: { type: String, required: true },
+            contentId: { type: String, required: true },
             related: { type: String, required: true }
         }
     ],
@@ -34,15 +35,16 @@ var messageSchema = new Schema({
         isHTML: { type: Boolean, required: true },
         contentType: {
             value: { type: String, required: true },
-            subtype: { type: String, required: true },
-            type: { type: String, required: true },
             params: { type: Object },
         },
         bodyEncoding: { type: String, required: true },
         bodyContent: { type: String, required: true },
-        children: { type: Object }
+        children: { type: Array, required: true }
     },
-    envelop: { type: String, required: true },
+    from: { type: Array, required: true },
+    to: { type: Array, required: true },
+    cc: { type: Array, required: true },
+    bcc: { type: Array, required: true },
     mailbox: {
         type: Schema.Types.ObjectId,
         ref: 'Mailbox',
@@ -65,7 +67,7 @@ var messageSchema = new Schema({
         ref: 'Thread',
         required: true
     },
-    metadata: {type: Object}
+    metadata: { type: Object }
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },

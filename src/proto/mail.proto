@@ -19,9 +19,58 @@ message Chunk {
   bytes chunk = 1;
 }
 
+message Attachments {
+  string fileid = 1;
+  string filename = 2;
+  string contentDisposition = 3;
+  string contentType = 4;
+  string transferEncoding = 5;
+  string contentId = 6;
+}
+
+message HeaderValue {
+  string value = 1;
+  map<string, string> params = 2;
+}
+
+// By default all fields are optional in proto3 , so client may or may not set these
+message BodyHeader {
+  HeaderValue contentType = 1;
+  HeaderValue contentDescription = 2;
+  HeaderValue contentDisposition = 3;
+  string contentTransferEncoding = 4;
+  string contentId = 5;
+  bool root = 6;
+}
+
+message Body {
+  bool isHTML = 1;
+  HeaderValue contentType = 2;
+  string bodyEncoding = 3;
+  string bodyContent = 4;
+  repeated Body children = 5;
+  BodyHeader header = 6;
+}
+
+message NewEmail {
+  repeated string uniquercpt = 1;
+  int64 size = 2;
+  map<string, string> parsedHeaders = 3;
+  Body body = 4;
+  repeated Attachments attachments = 5;
+  repeated string from = 6;
+  repeated string to = 7;
+  repeated string cc = 8;
+  repeated string bcc = 9;
+}
+
+message Empty { }
+
 service MailService {
   rpc CheckValidity (ValidityReq) returns (ValidityRes) {}
   // File info and content type will be passed in metadata
   // If these are not passed then error will be sent back
   rpc UploadAttachment(stream Chunk) returns (UploadedFileId) {}
+
+  rpc SaveInbound(NewEmail) returns (Empty) {}
 }
