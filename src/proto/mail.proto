@@ -49,7 +49,7 @@ message Body {
   string bodyEncoding = 3;
   string bodyContent = 4;
   repeated Body children = 5;
-  BodyHeader header = 6;
+  BodyHeader headers = 6;
 }
 
 message NewEmail {
