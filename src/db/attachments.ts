@@ -31,7 +31,8 @@ var attachmentsSchema = new Schema({
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
-    collection: "attachments.files"
+    collection: "attachments.files",
+    minimize: false
 })
 
 const indexes: ModelIndex[] = []

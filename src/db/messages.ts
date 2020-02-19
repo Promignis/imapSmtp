@@ -4,7 +4,69 @@ import { ModelData, ModelIndex } from './types'
 const Schema = mongoose.Schema;
 const modelName = "Message"
 
+export interface IAttachments {
+    fileId: mongoose.Types.ObjectId,
+    filename: string,
+    contentDisposition: string,
+    contentType: string,
+    transferEncoding: string,
+    contentId: string,
+    related: boolean
+}
+
+export interface IBody {
+    isHTML: boolean,
+    contentType: {
+        value: string
+        params: Object,
+    },
+    bodyEncoding: string,
+    bodyContent: string,
+    children: Array<Body>
+}
+
+export interface IRcpt {
+    original: string,
+    originalHost: string,
+    host: string,
+    user: string
+}
+
+export interface IMessage extends mongoose.Document {
+    rootId: mongoose.Types.ObjectId | string,
+    exp: boolean,
+    retentionDate: Date,
+    userRemoved: boolean,
+    idate: Date,
+    size: number,
+    parsedHeaders: object,
+    messageId: string,
+    draft: boolean,
+    copied: boolean,
+    attachments: IAttachments[],
+    hasAttachments: boolean,
+    flags: {
+        seen: boolean,
+        starred: boolean,
+        important: boolean
+    },
+    body: IBody,
+    from: Array<string>,
+    to: Array<string>,
+    cc: Array<string>,
+    bcc: Array<string>,
+    rcpt: IRcpt[],
+    mailbox: mongoose.Types.ObjectId,
+    user: mongoose.Types.ObjectId,
+    address: mongoose.Types.ObjectId,
+    uid: number,
+    modseq: number,
+    thread: mongoose.Types.ObjectId,
+    metadata: object,
+}
+
 var messageSchema = new Schema({
+    rootId: { type: Schema.Types.ObjectId || String, required: true },
     exp: { type: Boolean },
     retentionDate: { type: Date },
     userRemoved: { type: Boolean },
@@ -17,7 +79,11 @@ var messageSchema = new Schema({
     copied: { type: Boolean },
     attachments: [
         {
-            fileId: { type: String, required: true },
+            fileId: {
+                type: Schema.Types.ObjectId,
+                ref: 'Attachment',
+                required: true
+            },
             filename: { type: String, required: true },
             contentDisposition: { type: String },
             contentType: { type: String, required: true },
@@ -26,6 +92,7 @@ var messageSchema = new Schema({
             related: { type: String, required: true }
         }
     ],
+    hasAttachments: { type: Boolean, required: true }, // Will make it easier to filter emails
     flags: {
         seen: { type: Boolean, required: true },
         starred: { type: Boolean, required: true },
@@ -45,6 +112,14 @@ var messageSchema = new Schema({
     to: { type: Array, required: true },
     cc: { type: Array, required: true },
     bcc: { type: Array, required: true },
+    rcpt: [
+        {
+            original: { type: String, required: true },
+            originalHost: { type: String, required: true },
+            host: { type: String, required: true },
+            user: { type: String, required: true }
+        }
+    ],
     mailbox: {
         type: Schema.Types.ObjectId,
         ref: 'Mailbox',
@@ -71,7 +146,8 @@ var messageSchema = new Schema({
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
-    collection: "messages"
+    collection: "messages",
+    minimize: false
 })
 
 const indexes: ModelIndex[] = [

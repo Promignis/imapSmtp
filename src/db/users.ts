@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { ModelData, ModelIndex } from './types'
-import {UserQuotas} from '../types/types'
+import { UserQuotas } from '../types/types'
 
 const Schema = mongoose.Schema;
 const modelName = "User"
@@ -62,7 +62,8 @@ var userSchema = new Schema({
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
-    collection: "users"
+    collection: "users",
+    minimize: false
 })
 
 const indexes: ModelIndex[] = [

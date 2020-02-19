@@ -35,7 +35,8 @@ var threadSchema = new Schema({
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
-    collection: "threads"
+    collection: "threads",
+    minimize: false
 })
 
 const indexes: ModelIndex[] = [

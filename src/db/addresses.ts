@@ -11,7 +11,7 @@ export interface IAddress extends mongoose.Document {
     address: string,
     storageUsed: number,
     metadata: object
-} 
+}
 
 var addressAcema = new Schema({
     user: {
@@ -22,12 +22,13 @@ var addressAcema = new Schema({
     host: { type: String, required: true },
     domain: { type: String, required: true },
     address: { type: String, required: true, unique: true },
-    storageUsed: {type: Number, required: true},
+    storageUsed: { type: Number, required: true },
     metadata: { type: Object }
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
-    collection: "addresses"
+    collection: "addresses",
+    minimize: false
 })
 
 const indexes: ModelIndex[] = [

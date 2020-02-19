@@ -45,7 +45,8 @@ var mailboxesSchema = new Schema({
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
-    collection: "mailboxes"
+    collection: "mailboxes",
+    minimize: false
 })
 
 const indexes: ModelIndex[] = [

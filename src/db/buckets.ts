@@ -30,7 +30,8 @@ var bucketSchema = new Schema({
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
-    collection: "buckets"
+    collection: "buckets",
+    minimize: false
 })
 
 const indexes: ModelIndex[] = [
