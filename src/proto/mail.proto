@@ -20,12 +20,13 @@ message Chunk {
 }
 
 message Attachments {
-  string fileid = 1;
-  string filename = 2;
-  string contentDisposition = 3;
-  string contentType = 4;
-  string transferEncoding = 5;
+  string id = 1;
+  string fileName = 2;
+  HeaderValue contentDsiposition = 3;
+  HeaderValue contentType = 4;
+  string contentTransferEncoding = 5;
   string contentId = 6;
+  bool related = 7;
 }
 
 message HeaderValue {

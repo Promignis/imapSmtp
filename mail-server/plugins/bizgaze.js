@@ -353,8 +353,6 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
 
     let count = unique.size
 
-    connection.loginfo(addresses, " : ", unique)
-
     function next() {
         if (attachments_still_processing(txn)) return;
         txn.notes.attachment.next();
@@ -388,7 +386,6 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
                 attachment['id'] = id
                 txn.notes.attachment.attachments.push(attachment)
                 txn.notes.attachment.todo_count--;
-                connection.loginfo('attach data: ', attachment)
                 next();
             })
             .catch(err => {
