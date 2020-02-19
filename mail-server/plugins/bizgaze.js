@@ -374,8 +374,10 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     stream.resume()
 
     let call = grpcClient.uploadAttachment()
+    let size = 0
 
     stream.on('data', function (d) {
+        size += d.length
         call.sendMessage({ chunk: d })
     })
 
@@ -384,6 +386,7 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
             .then(res => {
                 let id = res.id
                 attachment['id'] = id
+                attachment['size'] = size
                 txn.notes.attachment.attachments.push(attachment)
                 txn.notes.attachment.todo_count--;
                 next();

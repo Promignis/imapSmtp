@@ -27,6 +27,7 @@ message Attachments {
   string contentTransferEncoding = 5;
   string contentId = 6;
   bool related = 7;
+  int32 size = 8;
 }
 
 message HeaderValue {
@@ -62,7 +63,7 @@ message Rcpt {
 
 message NewEmail {
   repeated string uniquercpt = 1;
-  int64 size = 2;
+  int32 size = 2;
   map<string, string> parsedHeaders = 3;
   Body body = 4;
   repeated Attachments attachments = 5;
