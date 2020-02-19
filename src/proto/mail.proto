@@ -53,6 +53,13 @@ message Body {
   BodyHeader headers = 6;
 }
 
+message Rcpt {
+  string  original = 1;
+  string  originalHost = 2;
+  string  host = 3;
+  string  user =  4;
+}
+
 message NewEmail {
   repeated string uniquercpt = 1;
   int64 size = 2;
@@ -63,6 +70,7 @@ message NewEmail {
   repeated string to = 7;
   repeated string cc = 8;
   repeated string bcc = 9;
+  repeated Rcpt rcptTo = 10;
 }
 
 message Empty { }

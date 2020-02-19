@@ -37,7 +37,7 @@ exports.hook_mail = function (next, connection, params) {
     const tnx = connection.transaction;
     // tnx.notes.id = new ObjectID();
     tnx.notes.targets = {
-        addresses: []
+        addresses: new Set()
     };
     next();
 }
@@ -91,7 +91,7 @@ exports.hook_rcpt = function (next, connection, params) {
     ps(this.grpcClient, this.grpcClient.checkValidity, { address: address })
         .then(resp => {
             if (resp.valid) {
-                addresses.push(address)
+                addresses.add(address)
                 next(OK, "Rcpt successful")
             } else {
                 next(DENY, "No Such User")
@@ -112,6 +112,16 @@ exports.hook_queue = function (next, connection, params) {
     const body = txn.body
     const header = txn.header
     let attachments = txn.notes.attachment.attachments
+
+    const rcptTo = txn.rcpt_to.map((r) => {
+        let add = {}
+        // will convert "<a@a.com>" to  "a@a.com"
+        add['original'] = addrparser.parse(r.original)[0].address
+        add['originalHost'] = r.original_host
+        add['host'] = r.host
+        add['user'] = r.user
+        return add
+    })
 
     const headerTuples = Object.keys(header.headers_decoded).reduce((acc, key) => {
         let value = header.headers_decoded[key]
@@ -139,10 +149,6 @@ exports.hook_queue = function (next, connection, params) {
     })
 
     let addresses = txn.notes.targets.addresses
-    let unique = new Set()
-    addresses.forEach(a => {
-        unique.add(a)
-    })
 
     let extractedInfo = extBody(body)
     let related = extractedInfo.hasRelatedNode
@@ -160,7 +166,7 @@ exports.hook_queue = function (next, connection, params) {
 
     // Build payload
     let mailData = {
-        uniquercpt: Array.from(unique),
+        uniquercpt: Array.from(addresses),
         size: txn.data_bytes, // Total size of the email,
         parsedHeaders: headerTuples,
         body: extractedInfo.parsedBody,
@@ -168,7 +174,8 @@ exports.hook_queue = function (next, connection, params) {
         from: info.from,
         to: info.to,
         cc: info.cc || [],
-        bcc: info.bcc || []
+        bcc: info.bcc || [],
+        rcptTo: rcptTo
     }
 
     // Call grpc
@@ -269,7 +276,6 @@ const extBody = (body) => {
 }
 
 function start_att(connection, ct, fn, body, stream, grpcClient) {
-    connection.loginfo("fn:", fn)
     // Parse the header values
     let attachmentHeaders = body.header.headers_decoded
     /**
@@ -345,13 +351,7 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
 
     let addresses = txn.notes.targets.addresses
 
-    let unique = new Set()
-
-    addresses.forEach(a => {
-        unique.add(a)
-    })
-
-    let count = unique.size
+    let count = addresses.size
 
     function next() {
         if (attachments_still_processing(txn)) return;
