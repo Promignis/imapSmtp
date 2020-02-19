@@ -3,7 +3,7 @@ import { db } from '../db/connection'
 import { to } from '../utils'
 import { HTTP_STATUS, ServerError } from '../errors'
 import { IAddress } from '../db/addresses'
-import { ServiceContext } from '../types/types'
+import { ServiceContext, FindQuery } from '../types/types'
 
 class AddressService {
 
@@ -29,7 +29,7 @@ class AddressService {
 
         let result: any
 
-        [err, result] = await to(this.Address.findOne({ "address": address }, {}, dbCallOptions).exec())
+        [err, result] = await to(this.Address.findOne({ "address": address }, null, dbCallOptions).exec())
 
         if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
@@ -81,6 +81,26 @@ class AddressService {
         }
 
         return <IAddress>result
+    }
+
+    async findAddresses(ctx: ServiceContext, query: FindQuery, options?: object): Promise<any> {
+        let dbCallOptions: any = {}
+        if (ctx.session) {
+            dbCallOptions.session = ctx.session
+        }
+
+        let projection: string | null = query.projection ? query.projection : null
+
+        let err: any
+        let res: any
+
+        [err, res] = await to(this.Address.find(query.filter, projection, dbCallOptions).exec())
+
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+        }
+
+        return res
     }
 }
 

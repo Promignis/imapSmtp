@@ -3,7 +3,8 @@ import { to } from '../utils'
 import { HTTP_STATUS, ServerError, MONGO_CODES } from '../errors'
 import { IUser } from '../db/users'
 import {
-    ServiceContext
+    ServiceContext,
+    FindQuery
 } from '../types/types'
 
 class UserService {
@@ -53,7 +54,7 @@ class UserService {
         let err: any
         let existingUser: any
 
-        [err, existingUser] = await to(this.User.findOne({ 'username': username }, {}, dbCallOptions).exec())
+        [err, existingUser] = await to(this.User.findOne({ 'username': username }, null, dbCallOptions).exec())
 
         if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.Name || "")
@@ -64,6 +65,26 @@ class UserService {
         }
 
         return false
+    }
+
+    async findUsers(ctx: ServiceContext, query: FindQuery, options?: object): Promise<any> {
+        let dbCallOptions: any = {}
+        if (ctx.session) {
+            dbCallOptions.session = ctx.session
+        }
+
+        let projection: string | null = query.projection ? query.projection : null
+
+        let err: any
+        let res: any
+
+        [err, res] = await to(this.User.find(query.filter, projection, dbCallOptions).exec())
+
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+        }
+
+        return res
     }
 }
 

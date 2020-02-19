@@ -4,17 +4,19 @@ import { ModelData, ModelIndex } from './types'
 const Schema = mongoose.Schema;
 const modelName = "Message"
 
-export interface IAttachments {
+export interface IAttachment {
     fileId: mongoose.Types.ObjectId,
     filename: string,
     contentDisposition: string,
     contentType: string,
     transferEncoding: string,
     contentId: string,
-    related: boolean
+    related: boolean,
+    size: number
 }
 
 export interface IBody {
+    headers: object,
     isHTML: boolean,
     contentType: {
         value: string
@@ -32,8 +34,8 @@ export interface IRcpt {
     user: string
 }
 
-export interface IMessage extends mongoose.Document {
-    rootId: mongoose.Types.ObjectId | string,
+export interface IMessage {
+    rootId: mongoose.Types.ObjectId | null,
     exp: boolean,
     retentionDate: Date,
     userRemoved: boolean,
@@ -43,7 +45,7 @@ export interface IMessage extends mongoose.Document {
     messageId: string,
     draft: boolean,
     copied: boolean,
-    attachments: IAttachments[],
+    attachments: IAttachment[],
     hasAttachments: boolean,
     flags: {
         seen: boolean,
@@ -65,8 +67,10 @@ export interface IMessage extends mongoose.Document {
     metadata: object,
 }
 
+export interface IMessageDoc extends IMessage, mongoose.Document { }
+
 var messageSchema = new Schema({
-    rootId: { type: Schema.Types.ObjectId || String, required: true },
+    rootId: { type: Schema.Types.ObjectId },
     exp: { type: Boolean },
     retentionDate: { type: Date },
     userRemoved: { type: Boolean },
@@ -89,7 +93,8 @@ var messageSchema = new Schema({
             contentType: { type: String, required: true },
             transferEncoding: { type: String, required: true },
             contentId: { type: String, required: true },
-            related: { type: String, required: true }
+            related: { type: String, required: true },
+            size: { type: Number, required: true } //// Number of bytes
         }
     ],
     hasAttachments: { type: Boolean, required: true }, // Will make it easier to filter emails
@@ -99,13 +104,14 @@ var messageSchema = new Schema({
         important: { type: Boolean, required: true },
     },
     body: {
+        headers: { type: Object },
         isHTML: { type: Boolean, required: true },
         contentType: {
             value: { type: String, required: true },
             params: { type: Object },
         },
-        bodyEncoding: { type: String, required: true },
-        bodyContent: { type: String, required: true },
+        bodyEncoding: { type: String },
+        bodyContent: { type: String },
         children: { type: Array, required: true }
     },
     from: { type: Array, required: true },

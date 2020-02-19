@@ -182,7 +182,7 @@ exports.hook_queue = function (next, connection, params) {
     ps(this.grpcClient, this.grpcClient.saveInbound, mailData)
         .then(resp => {
             // Response is empty in case of successfull saving
-            next()
+            next(OK)
         })
         .catch(e => {
             connection.logerror(`Error Saving email: ${e.toString()}`)

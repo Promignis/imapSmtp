@@ -6,7 +6,7 @@ import { IUser } from '../db/users'
 import {
     NewUserDetails,
     UserCreateOpts,
-    UserProfile,
+    UserProfile
 } from '../types/types'
 import { ROLES } from '../services/roles'
 import { ServerError, HTTP_STATUS } from '../errors'

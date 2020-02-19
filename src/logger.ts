@@ -9,7 +9,6 @@ let filePath = <string>config.get("logger.logDirectory")
 
 // Winston does not create directories
 if (!fs.existsSync(filePath)) {
-    console.log(filePath)
     // Create the directory if it does not exist
     fs.mkdirSync(filePath, { recursive: true })
 }

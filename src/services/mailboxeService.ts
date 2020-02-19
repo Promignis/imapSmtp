@@ -3,7 +3,7 @@ import { db } from '../db/connection'
 import { to } from '../utils'
 import { HTTP_STATUS, ServerError } from '../errors'
 import { IMailbox } from '../db/mailboxes'
-import { ServiceContext } from '../types/types'
+import { ServiceContext, FindQuery, UpdateQuery } from '../types/types'
 
 class MailboxService {
 
@@ -61,6 +61,7 @@ class MailboxService {
         }
 
         let docs: any[] = []
+
         let uidValidity = Math.floor(Date.now() / 1000);
 
         this.systemMailbox.forEach((mailbox: any) => {
@@ -80,7 +81,7 @@ class MailboxService {
                 imapName: mailbox.imapName,
                 specialUse: mailbox.specialUse,
                 delimiter: mailbox.delimiter,
-                retention: mailbox.retention,
+                retention: mailbox.retention || false,
                 retentionTime: retentionTime,
                 uidValidity,
                 uidNext: 1,
@@ -102,6 +103,47 @@ class MailboxService {
         }
 
         return <IMailbox[]>result
+    }
+
+    async findMailboxes(ctx: ServiceContext, query: FindQuery, options?: object): Promise<any> {
+        let dbCallOptions: any = {}
+        if (ctx.session) {
+            dbCallOptions.session = ctx.session
+        }
+
+        let projection: string | null = query.projection ? query.projection : null
+
+        let err: any
+        let res: any
+
+        [err, res] = await to(this.Mailbox.find(query.filter, projection, dbCallOptions).exec())
+
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+        }
+
+        return res
+    }
+
+    async updateMailboxes(ctx: ServiceContext, queryInfo: UpdateQuery, options?: Object): Promise<Number> {
+        let dbCallOptions: any = {}
+        if (ctx.session) {
+            dbCallOptions.session = ctx.session
+        }
+
+        let res: any
+        let err: any
+
+        [err, res] = await to(this.Mailbox.updateMany(queryInfo.filter, queryInfo.document, dbCallOptions).exec())
+
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+        }
+
+        // res.n gives Number of documents matched
+        let modifiedCount = res.nModified
+
+        return modifiedCount
     }
 }
 

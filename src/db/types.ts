@@ -5,7 +5,8 @@ import { IAddress } from './addresses'
 import { IBucket } from './buckets'
 import { IEvents } from './eventlogs'
 import { IMailbox } from './mailboxes'
-import { IThreads } from './threads'
+import { IThreadDoc } from './threads'
+import { IMessageDoc } from './messages'
 
 export interface ModelData {
     schema: mongoose.Schema;
@@ -52,8 +53,8 @@ export interface MainModels {
     Mailbox: mongoose.Model<IMailbox>,
     Bucket: mongoose.Model<IBucket>,
     Event: mongoose.Model<IEvents>,
-    Thread: mongoose.Model<IThreads>,
-    Message: mongoose.Model<any>
+    Thread: mongoose.Model<IThreadDoc>,
+    Message: mongoose.Model<IMessageDoc>
 }
 
 // When new models are added this type will have to be updated

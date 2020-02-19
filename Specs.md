@@ -137,7 +137,6 @@ threads {
     address<bson> //Address id
     subject<string> // cleaned thread subject. ie prefixes like Re: and Fwd: are cleaned before storing
     referenceIds<[string]> // array of reference-id message headers of the messages that belong to the thread. This is used to decide if an incoming message should be added to an existing thread 
-    participents<[string]> // array of email addresses of all the participents in the thread
     created_at<int64:unix timestamp>
     updated_at<int64:unix timestamp>
 }
@@ -192,6 +191,7 @@ messages{
             contentDisposition<string> // As specified in [RFC2183](https://tools.ietf.org/html/rfc2183)
             transferEncoding<string> // eg. Base64
             related<bool> //Was this attachment found from a multipart/related node. This usually means that this is an embedded image
+            size<int32>
         }
     ]
     flags {
@@ -200,6 +200,7 @@ messages{
         important<bool>
     }  // Default flags for a message 
     body {
+        headers<object>
         isHTML<bool>
         contentType {
             value<string>

@@ -39,3 +39,13 @@ export interface AttachmentInfo {
     count: number,
     contentType: string
 }
+
+export interface UpdateQuery {
+    filter: object, // To find the document to update
+    document: object, // Values to update
+}
+
+export interface FindQuery {
+    filter: object,
+    projection?: string //eg. 'name friends'
+}

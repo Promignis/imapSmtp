@@ -1,5 +1,4 @@
 import mongoose from "mongoose"
-import { db } from '../db/connection'
 import { to } from '../utils'
 import { HTTP_STATUS, MONGO_CODES, ServerError } from '../errors'
 import { IBucket } from '../db/buckets'
@@ -61,6 +60,4 @@ class BucketService {
         return this.createBucket(ctx, user, address, this.attachmentBucketName)
     }
 }
-
-// export default new BucketService(db.main.models.Bucket)
 export default BucketService
