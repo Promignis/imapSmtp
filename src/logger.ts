@@ -71,17 +71,74 @@ class FastifyCompliantLogger {
         this.logger = logger;
     }
 
+    _fastifySerilizer(msg: any): any {
+        let keys = Object.keys(msg)
+
+        if (keys.includes('err') && keys.includes('res')) {
+            let res = msg['res']
+            let error = msg['err']
+            let responseTime = msg['responseTime']
+            return {
+                message: this._serializeRes(res, responseTime),
+                error: error
+            }
+
+        } else if (keys.includes('res')) {
+            let res = msg['res']
+            let responseTime = msg['responseTime']
+            return {
+                message: this._serializeRes(res, responseTime),
+            }
+
+        } else if (keys.includes('req')) {
+            let req = msg['req']
+            let method = req.method
+            let url = req.url
+            let hostname = req.hostname
+            let remoteAddress = req.ip
+            let remotePort = req.connection.remotePort
+
+            let message = `${method} ${url} with host:${hostname} from:${remoteAddress}:${remotePort}`
+
+            return {
+                message: message
+            }
+
+        } else {
+            // Could not match with known keys, throw error and return a generic message
+            this.error(`Unknown keys found while logging: ${JSON.stringify(keys)}`)
+            return {
+                message: "Unknown Key error"
+            }
+        }
+    }
+
+    _serializeRes(res: any, responseTime: number): String {
+        return `Responded with status:${res.statusCode} in ${responseTime}ms`
+    }
 
     info(msg: string) {
-        this.logger.info(msg)
+        let message = msg
+        if (typeof msg == 'object') {
+            let serialized: any = this._fastifySerilizer(msg)
+            message = serialized.message
+        }
+        this.logger.info(message)
     }
 
     error(msg: string, err: Error | undefined = undefined) {
-        if (!(err instanceof Error)) err = undefined
-        if (err == undefined) {
-            this.logger.error(msg)
+        let message = msg
+        let error: Error | undefined = err
+        if (typeof msg == 'object') {
+            let serialized: any = this._fastifySerilizer(msg)
+            message = serialized.message
+            error = serialized.error
+        }
+        if (!(error instanceof Error)) error = undefined
+        if (error == undefined) {
+            this.logger.error(message)
         } else {
-            this.logger.error(msg, err)
+            this.logger.error(message, error)
         }
     }
 
