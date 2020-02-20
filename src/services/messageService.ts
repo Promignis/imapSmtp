@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { to } from '../utils'
-import { HTTP_STATUS, MONGO_CODES, ServerError } from '../errors'
+import { HTTP_STATUS, ServerError, INT_ERRORS } from '../errors'
 import { IMessage, IMessageDoc } from '../db/messages'
 import { ServiceContext } from '../types/types'
 
@@ -27,7 +27,7 @@ class MessageService {
         [err, newMessage] = await to(messageDoc.save(dbCallOptions))
 
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
 
         return newMessage

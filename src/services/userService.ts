@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { to } from '../utils'
-import { HTTP_STATUS, ServerError, MONGO_CODES } from '../errors'
+import { HTTP_STATUS, ServerError, MONGO_CODES, INT_ERRORS } from '../errors'
 import { IUser } from '../db/users'
 import {
     ServiceContext,
@@ -37,7 +37,7 @@ class UserService {
             if (err.name == 'MongoError' && err.code == MONGO_CODES.DUPLICATE_KEY) {
                 throw new ServerError(HTTP_STATUS.BAD_REQUEST, `Bucket with name ${name} already exists`, err.name)
             } else {
-                throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+                throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
             }
         }
 
@@ -57,7 +57,7 @@ class UserService {
         [err, existingUser] = await to(this.User.findOne({ 'username': username }, null, dbCallOptions).exec())
 
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.Name || "")
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.Name || INT_ERRORS.SERVER_ERR)
         }
 
         if (!existingUser) {
@@ -81,9 +81,8 @@ class UserService {
         [err, res] = await to(this.User.find(query.filter, projection, dbCallOptions).exec())
 
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
-
         return res
     }
 }

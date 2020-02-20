@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { to } from '../utils'
-import { HTTP_STATUS, MONGO_CODES, ServerError } from '../errors'
+import { HTTP_STATUS, MONGO_CODES, ServerError, INT_ERRORS } from '../errors'
 import { IBucket } from '../db/buckets'
 import { ServiceContext } from '../types/types'
 
@@ -49,7 +49,7 @@ class BucketService {
             if (err.name == 'MongoError' && err.code == MONGO_CODES.DUPLICATE_KEY) {
                 throw new ServerError(HTTP_STATUS.BAD_REQUEST, `Bucket with name ${name} already exists`, err.name)
             } else {
-                throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+                throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
             }
         }
 

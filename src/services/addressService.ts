@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import { db } from '../db/connection'
 import { to } from '../utils'
-import { HTTP_STATUS, ServerError } from '../errors'
+import { HTTP_STATUS, ServerError, INT_ERRORS } from '../errors'
 import { IAddress } from '../db/addresses'
 import { ServiceContext, FindQuery } from '../types/types'
 
@@ -32,7 +32,7 @@ class AddressService {
         [err, result] = await to(this.Address.findOne({ "address": address }, null, dbCallOptions).exec())
 
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
 
         // Null is returned if no documents were found
@@ -77,7 +77,7 @@ class AddressService {
         [queryErr, result] = await to(doc.save(dbCallOptions))
 
         if (queryErr != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, queryErr.message, queryErr.name || "")
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, queryErr.message, queryErr.name || INT_ERRORS.SERVER_ERR)
         }
 
         return <IAddress>result
@@ -97,7 +97,7 @@ class AddressService {
         [err, res] = await to(this.Address.find(query.filter, projection, dbCallOptions).exec())
 
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
 
         return res

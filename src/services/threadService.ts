@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { to } from '../utils'
-import { HTTP_STATUS, MONGO_CODES, ServerError } from '../errors'
+import { HTTP_STATUS, ServerError, INT_ERRORS } from '../errors'
 import { IThread, IThreadDoc } from '../db/threads'
 import { ServiceContext, UpdateQuery, FindQuery } from '../types/types'
 
@@ -27,7 +27,7 @@ class ThreadService {
         [err, newThread] = await to(threadDoc.save(dbCallOptions))
 
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
 
         return newThread
@@ -47,7 +47,7 @@ class ThreadService {
         [err, res] = await to(this.Thread.updateMany(queryInfo.filter, queryInfo.document, dbCallOptions).exec())
 
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
 
         // res.n gives Number of documents matched
@@ -70,7 +70,7 @@ class ThreadService {
         [err, res] = await to(this.Thread.find(query.filter, projection, dbCallOptions).exec())
 
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
 
         return res
