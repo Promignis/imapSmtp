@@ -9,6 +9,7 @@ import { transactionPlugin } from './transactions/transactionPlugin'
 import { setupGrpcPlugin } from './proto/grpcPlugin'
 import { globalErrorHandler } from './handlers/errorHandlers'
 import userRoutes from './routes/userRoutes'
+import mailboxRoutes from './routes/mailboxRoutes'
 import grpc from 'grpc'
 
 
@@ -57,7 +58,26 @@ server.register(setupGrpcPlugin)
 
 // Register the routes
 server.register(userRoutes, { prefix: '/api/v1/user' })
+server.register(mailboxRoutes, { prefix: '/api/v1/mailbox' })
 
+// IMPORTANT! This is temp, This has to be removed once auth handlers are intigrated
+// For now, pass the username explicity in a query param to all the requests
+server.addHook('onRequest', async (req: any, rep: any) => {
+    //@ts-ignore
+    let f = server.services.userService
+    let uname = req.query.user
+    try {
+        let q = {
+            filter: {
+                username: uname
+            }
+        }
+        let u = await f.findUsers({}, q)
+        req["userObj"] = u[0]
+    } catch (err) {
+        rep.status(500).send()
+    }
+})
 
 const startHTTPServer = async () => {
     try {

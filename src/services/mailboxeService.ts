@@ -89,7 +89,7 @@ class MailboxService {
                 subscribed: true,
                 stats: {
                     total: 0,
-                    seen: 0,
+                    unseen: 0,
                     sizeKB: 0
                 },
                 metadata: {}

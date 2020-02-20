@@ -19,7 +19,7 @@ export interface IMailbox {
     retentionTime: Date,
     stats: {
         total: number,
-        seen: number,
+        unseen: number,
         sizeKB: number
     }
     metadata: object
@@ -50,7 +50,7 @@ var mailboxesSchema = new Schema({
     retentionTime: { type: Date },
     stats: {
         total: { type: Number },
-        seen: { type: Number },
+        unseen: { type: Number },
         sizeKB: { type: Number }, //KB
     },
     metadata: { type: Object }

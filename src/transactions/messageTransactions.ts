@@ -2,7 +2,7 @@ import mongodb from 'mongodb'
 import mongoose from 'mongoose'
 import { MongooseTransaction } from './transact'
 import { to } from '../utils'
-import { IMessage, IMessageDoc } from '../db/messages'
+import { IMessage } from '../db/messages'
 import { ServerError, HTTP_STATUS } from '../errors'
 import { FindQuery, UpdateQuery } from '../types/types'
 import { IThread, IThreadDoc } from '../db/threads'
@@ -58,7 +58,7 @@ export class MessageTX {
                         uidNext: 1,
                         modifyIndex: 1,
                         "stats.total": 1,
-                        "stats.seen": 1,
+                        "stats.unseen": 1,
                         "stats.sizeKB": sizeKB
                     }
                 }
