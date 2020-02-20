@@ -163,11 +163,15 @@ const indexes: ModelIndex[] = [
             unique: false
         }
     },
+    { fields: { hasAttachments: 1 } },
+    { fields: { from: 1 } }, // Multi-Key index. Will make filtering faster
     { fields: { draft: 1 } },
     { fields: { address: 1 } },
     { fields: { user: 1 } },
     { fields: { thread: 1 } },
-    { fields: { flags: 1 } }
+    { fields: { flags: 1 } },
+    { fields: { idate: 1 } }, // This will speed up get mail list
+    { fields: { idate: -1 } }, // To support 
 ]
 
 const m: ModelData = {

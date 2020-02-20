@@ -47,6 +47,7 @@ export class MessageTX {
                 throw err
             }
             // update mailboxes 
+            let sizeKB = mail.size / 1024
             let mailboxUpdateQuery: UpdateQuery = {
                 filter: {
                     user: mail.user,
@@ -55,7 +56,10 @@ export class MessageTX {
                 document: {
                     $inc: {
                         uidNext: 1,
-                        modifyIndex: 1
+                        modifyIndex: 1,
+                        "stats.total": 1,
+                        "stats.seen": 1,
+                        "stats.sizeKB": sizeKB
                     }
                 }
             }

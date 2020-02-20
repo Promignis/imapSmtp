@@ -4,7 +4,7 @@ import { ModelData, ModelIndex } from './types'
 const Schema = mongoose.Schema;
 const modelName = "Mailbox"
 
-export interface IMailbox extends mongoose.Document {
+export interface IMailbox {
     user: mongoose.Types.ObjectId,
     address: mongoose.Types.ObjectId,
     name: string,
@@ -17,8 +17,15 @@ export interface IMailbox extends mongoose.Document {
     subscribed: number
     retention: boolean,
     retentionTime: Date,
+    stats: {
+        total: number,
+        seen: number,
+        sizeKB: number
+    }
     metadata: object
 }
+
+export interface IMailboxDoc extends mongoose.Document, IMailbox { }
 
 var mailboxesSchema = new Schema({
     user: {
@@ -41,6 +48,11 @@ var mailboxesSchema = new Schema({
     subscribed: { type: Boolean },
     retention: { type: Boolean },
     retentionTime: { type: Date },
+    stats: {
+        total: { type: Number },
+        seen: { type: Number },
+        sizeKB: { type: Number }, //KB
+    },
     metadata: { type: Object }
 }, {
     // Assigns createdAt and updatedAt fields to the schema,
@@ -51,6 +63,7 @@ var mailboxesSchema = new Schema({
 
 const indexes: ModelIndex[] = [
     { fields: { user: 1 } },
+    { fields: { address: 1 } },
     {
         // A combination of address user and mailbox name should be unique
         fields: { address: 1, user: 1, name: 1 },

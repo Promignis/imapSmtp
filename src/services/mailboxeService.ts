@@ -2,12 +2,12 @@ import mongoose from "mongoose"
 import { db } from '../db/connection'
 import { to } from '../utils'
 import { HTTP_STATUS, ServerError } from '../errors'
-import { IMailbox } from '../db/mailboxes'
+import { IMailbox, IMailboxDoc } from '../db/mailboxes'
 import { ServiceContext, FindQuery, UpdateQuery } from '../types/types'
 
 class MailboxService {
 
-    Mailbox: mongoose.Model<IMailbox>
+    Mailbox: mongoose.Model<IMailboxDoc>
 
     constructor(model: mongoose.Model<any>) {
         this.Mailbox = model
@@ -54,7 +54,7 @@ class MailboxService {
     defaultTrashRetention: Number = 0 // This can be configured in the future. 0 means infinite retention
     defaultJunkRetention: Number = 0
 
-    async createSystemMailboxes(ctx: ServiceContext, user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, options?: Object): Promise<IMailbox[]> {
+    async createSystemMailboxes(ctx: ServiceContext, user: mongoose.Types.ObjectId, address: mongoose.Types.ObjectId, options?: Object): Promise<IMailboxDoc[]> {
         let dbCallOptions: mongoose.SaveOptions = {}
         if (ctx.session) {
             dbCallOptions.session = ctx.session
@@ -87,6 +87,11 @@ class MailboxService {
                 uidNext: 1,
                 modifyIndex: 0,
                 subscribed: true,
+                stats: {
+                    total: 0,
+                    seen: 0,
+                    sizeKB: 0
+                },
                 metadata: {}
             }
 
@@ -102,7 +107,7 @@ class MailboxService {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || "")
         }
 
-        return <IMailbox[]>result
+        return result
     }
 
     async findMailboxes(ctx: ServiceContext, query: FindQuery, options?: object): Promise<any> {
