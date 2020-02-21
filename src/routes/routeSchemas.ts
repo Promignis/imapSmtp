@@ -81,28 +81,72 @@ export const getPaginatedMessagesSchema = {
         200: {
             type: 'object',
             properties: {
-                result: {
+                results: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            a: { type: 'string' },
+                            _id: { type: 'string' },
+                            body: { type: 'object', additionalProperties: true },
+                            from: { type: 'array', items: { type: 'string' } },
+                            to: { type: 'array', items: { type: 'string' } },
+                            cc: { type: 'array', items: { type: 'string' } },
+                            bcc: { type: 'array', items: { type: 'string' } },
+                            idate: { type: 'number' },
+                            parsedHeaders: { type: 'object', additionalProperties: true },
+                            messageId: { type: 'string' },
+                            attachments: { type: 'array', items: { type: 'object', additionalProperties: true } },
+                        }
+                    }
+                },
+                next: { type: 'string' },
+                hasNext: { type: 'string' },
+                previous: { type: 'string' },
+                hasPrevious: { type: 'string' },
+            },
+            additionalProperties: false
+        }
+    }
+}
+
+export const getThreadedMessagesSchema = {
+    body: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+            addressId: { type: 'string', minLength: 24, maxLength: 24 },
+            // Thread id
+            id: { type: 'string', minLength: 24, maxLength: 24 },
+        },
+        additionalProperties: false
+    },
+    response: {
+        200: {
+            type: 'object',
+            properties: {
+                messages: {
                     type: 'array',
                     items: {
                         type: 'object',
                         properties: {
                             _id: { type: 'string' },
-                            body: { type: 'object' },
-                            from: { type: 'array' },
-                            to: { type: 'array' },
-                            cc: { type: 'array' },
-                            bcc: { type: 'array' },
+                            body: { type: 'object', additionalProperties: true },
+                            from: { type: 'array', items: { type: 'string' } },
+                            to: { type: 'array', items: { type: 'string' } },
+                            cc: { type: 'array', items: { type: 'string' } },
+                            bcc: { type: 'array', items: { type: 'string' } },
                             idate: { type: 'number' },
-                            parsedHeaders: { type: 'object' },
+                            parsedHeaders: { type: 'object', additionalProperties: true },
                             messageId: { type: 'string' },
-                            attachments: { type: 'array' },
+                            attachments: { type: 'array', items: { type: 'object', additionalProperties: true } },
                             hasAttachments: { type: 'boolean' },
-                            flags: { type: 'object' }
+                            flags: { type: 'object', additionalProperties: true },
+                            thread: { type: 'string' }
                         }
                     }
                 }
-            },
-            additionalProperties: false
+            }
         }
     }
 }

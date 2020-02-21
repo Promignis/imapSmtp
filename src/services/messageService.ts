@@ -2,7 +2,7 @@ import mongoose from "mongoose"
 import { to } from '../utils'
 import { HTTP_STATUS, ServerError, INT_ERRORS } from '../errors'
 import { IMessage, IMessageDoc } from '../db/messages'
-import { ServiceContext, PaginationOpts, PaginatedResponse } from '../types/types'
+import { ServiceContext, PaginationOpts, PaginatedResponse, FindQuery } from '../types/types'
 
 
 class MessageService {
@@ -33,6 +33,26 @@ class MessageService {
         return newMessage
     }
 
+    async findMessages(ctx: ServiceContext, query: FindQuery, options?: object): Promise<any> {
+        let dbCallOptions: any = {}
+        if (ctx.session) {
+            dbCallOptions.session = ctx.session
+        }
+
+        let projection: string | null = query.projection ? query.projection : null
+
+        let err: any
+        let res: any
+
+        [err, res] = await to(this.Message.find(query.filter, projection, dbCallOptions).exec())
+
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
+        }
+
+        return res
+    }
+
     async getPaginatedMessages(ctx: ServiceContext, opts: PaginationOpts): Promise<PaginatedResponse> {
 
         const maxLimit = 100
@@ -49,7 +69,8 @@ class MessageService {
             attachments: 1,
             hasAttachments: 1,
             flags: 1,
-            body: 1
+            body: 1,
+            thread: 1,
         }
 
         let paginationParams: any = {
