@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { ModelData, ModelIndex } from './types'
+import { mongoosePaginatePlugin } from './paginate'
 
 const Schema = mongoose.Schema;
 const modelName = "Message"
@@ -67,7 +68,9 @@ export interface IMessage {
     metadata: object,
 }
 
-export interface IMessageDoc extends IMessage, mongoose.Document { }
+export interface IMessageDoc extends IMessage, mongoose.Document {
+    paginate: Function // from the plugin
+}
 
 var messageSchema = new Schema({
     rootId: { type: Schema.Types.ObjectId },
@@ -155,6 +158,8 @@ var messageSchema = new Schema({
     collection: "messages",
     minimize: false
 })
+
+messageSchema.plugin(mongoosePaginatePlugin) // This will add 'paginate' method to message model
 
 const indexes: ModelIndex[] = [
     {
