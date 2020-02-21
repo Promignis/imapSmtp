@@ -1,14 +1,16 @@
 import mongoose from 'mongoose'
 import { ServerError, HTTP_STATUS, INT_ERRORS } from '../errors'
+import { PaginationOpts, FindQuery } from '../types/types'
 import { to } from '../utils'
+
 
 // In all handlers `this` is the fastify instance
 // The fastify instance used for the handler registration
 
-export function getAllForUser(fastify: any): any {
+export function getPaginatedMessages(fastify: any): any {
     return async (req: any, reply: any) => {
         let f: any = fastify
-        // IMPORTANT! This is temp. Remove once auth is intigrated
+
         let user: any = req.userObj
 
         if (req.validationError) {
@@ -21,47 +23,45 @@ export function getAllForUser(fastify: any): any {
         }
 
         let addressId: mongoose.Types.ObjectId = user.primeAddress
+        let mailboxId: mongoose.Types.ObjectId = mongoose.Types.ObjectId(req.body.id)
 
-        if (req.body && req.body.id) {
-            addressId = mongoose.Types.ObjectId(req.body.id)
+        if (req.body.addressId) {
+            addressId = mongoose.Types.ObjectId(req.body.addressId)
         }
 
-        let resp: any = {
-            mailboxes: []
-        }
+        let resp: any = {}
+
         let replyCode = HTTP_STATUS.OK
 
-        let query = {
+        let q: FindQuery = {
             filter: {
                 user: user._id,
-                address: addressId
-            },
-            projection: '_id name stats.total stats.unseen stats.size'
+                address: addressId,
+                mailbox: mailboxId
+            }
+        }
+
+        let opts: PaginationOpts = {
+            limit: req.body.limit || 20,
+            query: q,
+            previous: req.body.previous,
+            next: req.body.next,
+            ascending: req.body.ascending
         }
 
         let err: any
-        let mailboxes: any
+        let res: any
 
-        [err, mailboxes] = await to(fastify.services.mailboxService.findMailboxes({}, query))
+        [err, res] = await to(fastify.services.messageService.getPaginatedMessages({}, opts))
         if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
-        if (mailboxes.length == 0) {
-            replyCode = HTTP_STATUS.NOT_FOUND
-        }
-        // Build the payload 
-        mailboxes.forEach((mb: any) => {
-            resp.mailboxes.push({
-                id: mb._id.toString(),
-                name: mb.name,
-                total: mb.stats.total,
-                unseen: mb.stats.unseen,
-                size: mb.stats.size
-            })
-        })
+
+        // Maybe flatten the output structure
+        resp = res
 
         reply
-            .code(replyCode)
+            .code(HTTP_STATUS.OK)
             .send(resp)
     }
 }

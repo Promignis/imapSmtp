@@ -10,7 +10,7 @@ import { setupGrpcPlugin } from './proto/grpcPlugin'
 import { globalErrorHandler } from './handlers/errorHandlers'
 import userRoutes from './routes/userRoutes'
 import mailboxRoutes from './routes/mailboxRoutes'
-import grpc from 'grpc'
+import messageRoutes from './routes/messageRoutes'
 
 
 // If using http2 we'd pass <http2.Http2Server, http2.Http2ServerRequest, http2.Http2ServerResponse>
@@ -59,6 +59,7 @@ server.register(setupGrpcPlugin)
 // Register the routes
 server.register(userRoutes, { prefix: '/api/v1/user' })
 server.register(mailboxRoutes, { prefix: '/api/v1/mailbox' })
+server.register(messageRoutes, { prefix: '/api/v1/message' })
 
 // IMPORTANT! This is temp, This has to be removed once auth handlers are intigrated
 // For now, pass the username explicity in a query param to all the requests

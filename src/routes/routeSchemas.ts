@@ -34,7 +34,7 @@ export const getAllMailboxSchema = {
         required: [],
         properties: {
             //This is the optional address id, if not given then defaults to user's primary addresss
-            id: { type: 'string', minLength: 12, maxLength: 12 } // Using mongo ObjectId type that has length 12 
+            id: { type: 'string', minLength: 24, maxLength: 24 }
         },
         additionalProperties: false
     },
@@ -52,6 +52,52 @@ export const getAllMailboxSchema = {
                             total: { type: 'number' },
                             unseen: { type: 'number' },
                             size: { type: 'number' },
+                        }
+                    }
+                }
+            },
+            additionalProperties: false
+        }
+    }
+}
+
+export const getPaginatedMessagesSchema = {
+    body: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+            //This is the optional address id, if not given then defaults to user's primary addresss
+            addressId: { type: 'string', minLength: 24, maxLength: 24 },// Using mongo ObjectId type that has 12 bytes, 24 char string in Hex 
+            // Mailbox Id
+            id: { type: 'string', minLength: 24, maxLength: 24 },
+            limit: { type: 'number', maximum: 50 }, // Defaults to 20
+            next: { type: 'string' },
+            previous: { type: 'string' },
+            ascending: { type: 'boolean' }
+        },
+        additionalProperties: false
+    },
+    response: {
+        200: {
+            type: 'object',
+            properties: {
+                result: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            _id: { type: 'string' },
+                            body: { type: 'object' },
+                            from: { type: 'array' },
+                            to: { type: 'array' },
+                            cc: { type: 'array' },
+                            bcc: { type: 'array' },
+                            idate: { type: 'number' },
+                            parsedHeaders: { type: 'object' },
+                            messageId: { type: 'string' },
+                            attachments: { type: 'array' },
+                            hasAttachments: { type: 'boolean' },
+                            flags: { type: 'object' }
                         }
                     }
                 }

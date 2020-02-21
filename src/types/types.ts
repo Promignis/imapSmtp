@@ -49,3 +49,18 @@ export interface FindQuery {
     filter: object,
     projection?: string //eg. 'name friends'
 }
+
+export interface PaginationOpts {
+    query: FindQuery,
+    limit: number,
+    previous?: string,
+    next?: string,
+    ascending?: boolean
+}
+
+export interface PaginatedResponse {
+    result: any,
+    hasNext: boolean,
+    next: string,
+    previous?: string
+}
