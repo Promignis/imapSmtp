@@ -24,4 +24,3 @@ export class ServerError extends Error {
             this.name = name
     }
 }
-

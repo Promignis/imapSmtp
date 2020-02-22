@@ -51,16 +51,16 @@ class GridFS {
 
                 /**
                  * Example of the returned file type
-                 * {                                           
-                    _id: 5e3d6474c6fcfc12096b61ea,            
-                    length: 12,                               
-                    chunkSize: 261120,                        
-                    uploadDate: 2020-02-07T13:22:01.931Z,     
-                    filename: 'sample.txt',                   
-                    md5: '9ed372fcc11acd1502916ec1b00c16ab',  
-                    contentType: 'text/plain',                
-                    aliases: [],                              
-                    metadata: { count: 1 }                    
+                 * {
+                    _id: 5e3d6474c6fcfc12096b61ea,
+                    length: 12,
+                    chunkSize: 261120,
+                    uploadDate: 2020-02-07T13:22:01.931Z,
+                    filename: 'sample.txt',
+                    md5: '9ed372fcc11acd1502916ec1b00c16ab',
+                    contentType: 'text/plain',
+                    aliases: [],
+                    metadata: { count: 1 }
                     }
                 */
             });

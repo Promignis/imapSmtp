@@ -6,7 +6,7 @@ interface ErrorMessage {
     message: string[]
 }
 
-// TODO: Add logger 
+// TODO: Add logger
 export function globalErrorHandler(error: any, request: any, reply: any) {
     let msg: ErrorMessage
     let message: string[] = []

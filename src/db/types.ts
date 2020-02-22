@@ -7,6 +7,11 @@ import { IEvents } from './eventlogs'
 import { IMailboxDoc } from './mailboxes'
 import { IThreadDoc } from './threads'
 import { IMessageDoc } from './messages'
+import { IMailbox } from './mailboxes'
+import { IRole } from './roles'
+import { IPrivilege } from './privileges'
+import { IResource } from './resources'
+import { IAccess } from './access'
 
 export interface ModelData {
     schema: mongoose.Schema;
@@ -55,6 +60,10 @@ export interface MainModels {
     Event: mongoose.Model<IEvents>,
     Thread: mongoose.Model<IThreadDoc>,
     Message: mongoose.Model<IMessageDoc>
+    Role: mongoose.Model<IRole>,
+    Privilege: mongoose.Model<IPrivilege>,
+    Resource: mongoose.Model<IResource>,
+    Access: mongoose.Model<IAccess>
 }
 
 // When new models are added this type will have to be updated

@@ -8,7 +8,7 @@ import {
     UserCreateOpts,
     UserProfile
 } from '../types/types'
-import { ROLES } from '../services/roles'
+import { ROLES } from '../services/roleService'
 import { ServerError, HTTP_STATUS } from '../errors'
 
 export class UserTX {

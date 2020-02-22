@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
-import { to } from '../utils'
 import { HTTP_STATUS, ServerError, MONGO_CODES, INT_ERRORS } from '../errors'
+import { to, bcryptVerify } from '../utils'
 import { IUser } from '../db/users'
 import {
     ServiceContext,
@@ -84,6 +84,34 @@ class UserService {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
         return res
+      }
+
+    async login(ctx: ServiceContext, username: string, password: string): Promise<IUser> {
+        let dbCallOptions: any = {}
+        if (ctx && ctx.session) {
+            dbCallOptions.session = ctx.session
+        }
+
+        let err, user:any
+        [err, user] = await to(this.User.findOne({ 'username': username }, {}, dbCallOptions).exec())
+        let passwordHash:string = (user && user.password) || "";
+        if(err != null) {
+          throw err
+        }
+
+        // TODO: type this better
+        let isUser: any
+        [err, isUser] = await to(bcryptVerify(password, passwordHash))
+        if(err != null) {
+          throw err
+        }
+        if(isUser) {
+          return user
+        } else {
+          // password was incorrect
+          // TODO: throw valid error
+          throw new Error("Incorrect password")
+        }
     }
 }
 

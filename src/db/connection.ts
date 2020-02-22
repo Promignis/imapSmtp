@@ -13,6 +13,11 @@ import messagesModel from './messages'
 import addressesModel from './addresses'
 import threadModel from './threads'
 import eventsModel from './eventlogs'
+import rolesModel from './roles'
+import privilegesModel from './privileges'
+import resourcesModel from './resources'
+import accessesModel from './access'
+
 // Wrapping a plugin inside fastifyPlugin makes sure that it is accessible in the same context where you require them
 import fastifyPlugin from 'fastify-plugin'
 
@@ -38,19 +43,20 @@ const DB = {
     "attachment": "attachment"
 }
 
-const appUsername = <string>config.get("db.username")
-const appPassword = <string>config.get("db.password")
-const appHost = <string>config.get("db.host")
-const appDBName = <string>config.get("db.name")
-let attachmentDBEnabled = false
+const appUsername: string = config.get("db.username")
+const appPassword: string = config.get("db.password")
+const appHost: string = config.get("db.host")
+const appDBName: string = config.get("db.name")
+let attachmentDBEnabled: boolean = false
 
-// Mongoose by default only supports one connection. This is used to have multiple mongo connections 
+// Mongoose by default only supports one connection. This is used to have multiple mongo connections
 interface connectionParams {
     name: string,
     uri: string,
     settings: any,
     schemas: ModelData[]
 }
+
 interface connections {
     [key: string]: {
         "connection": mongoose.Connection,
@@ -70,7 +76,7 @@ let mainConnectionParams: connectionParams = {
     name: DB['main'],
     uri: createMongoConnectionUrl(appHost, appUsername, appPassword, appDBName),
     settings: connectionSettings,
-    schemas: [userModel, bucketsModel, addressesModel, messagesModel, eventsModel, threadModel, mailboxesModel]
+    schemas: [userModel, bucketsModel, addressesModel, messagesModel, eventsModel, threadModel, mailboxesModel, rolesModel, privilegesModel, resourcesModel, accessesModel]
 }
 
 let connectionParams: connectionParams[] = []
@@ -176,7 +182,7 @@ async function setupMongoDBPlugin(fastify: any, { }) {
 
     // Will be used like: fastify.db.app.models.User.save({}) or fastify.db.models.attachments.Attachment.find({})
     /**
-     * Decorated value: 
+     * Decorated value:
      * db: {
      *  app: {
      *      connection: <mongoose connection obj>
@@ -201,5 +207,4 @@ async function setupMongoDBPlugin(fastify: any, { }) {
 }
 
 export const mongoosePlugin = fastifyPlugin(setupMongoDBPlugin)
-export const db = <DB>decorator
-
+export const db: DB = decorator

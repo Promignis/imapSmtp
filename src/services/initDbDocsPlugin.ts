@@ -1,0 +1,60 @@
+import { DB } from '../db/types'
+import fastifyPlugin from 'fastify-plugin'
+import { to } from '../utils'
+import { IPrivilege } from '../db/privileges'
+import { IRole } from '../db/roles'
+import { IResource } from '../db/resources'
+import { IAccess } from '../db/access'
+
+
+export interface InitDb {
+  roles: IRole[],
+  privileges: IPrivilege[],
+  resources: IResource[],
+  accesses: IAccess[]
+}
+
+// Initialize and cache any pre-created documents
+async function initDbDocs(fastify: any, { }, done: Function) {
+
+    let db: DB = fastify.db
+
+    let err, roles: any
+    // create if not found
+    [err, roles] = await to(fastify.services.roleService.create())
+    if(err != null) {
+      throw err
+    }
+    let privileges:any
+    [err, privileges] = await to(fastify.services.privilegeService.create())
+
+    if(err != null) {
+      throw err
+    }
+
+    let resources:any
+    [err, resources] = await to(fastify.services.resourceService.create())
+    if(err != null) {
+      throw err
+    }
+
+    let accesses: any
+    [err, accesses] = await to(fastify.services.accessService.create(null, roles))
+    if(err != null) {
+      throw err
+    }
+
+    // Decorate fastify with the initDb
+    let decorator: InitDb = {
+      roles,
+      privileges,
+      resources,
+      accesses
+    }
+
+    fastify.decorate('initDb', decorator)
+
+    done()
+}
+
+export const initDbDocsPlugin = fastifyPlugin(initDbDocs)

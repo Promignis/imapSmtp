@@ -1,16 +1,20 @@
-import fastify from "fastify"
+import fastify, { JWTTypes } from "fastify"
 import { Server, IncomingMessage, ServerResponse } from "http"
 import config from './config'
 import logger from './logger'
 import swagger from 'fastify-swagger'
 import { mongoosePlugin } from './db/connection'
 import { servicesPlugin } from './services/servicePlugin'
+import { initDbDocsPlugin, InitDb } from './services/initDbDocsPlugin'
 import { transactionPlugin } from './transactions/transactionPlugin'
 import { setupGrpcPlugin } from './proto/grpcPlugin'
 import { globalErrorHandler } from './handlers/errorHandlers'
 import userRoutes from './routes/userRoutes'
 import mailboxRoutes from './routes/mailboxRoutes'
 import messageRoutes from './routes/messageRoutes'
+import loginRoutes from './routes/authRoutes'
+import fastifyJWT from 'fastify-jwt'
+import { to } from './utils'
 
 
 // If using http2 we'd pass <http2.Http2Server, http2.Http2ServerRequest, http2.Http2ServerResponse>
@@ -19,6 +23,16 @@ const server: fastify.FastifyInstance<Server, IncomingMessage, ServerResponse> =
     logger: logger,
     pluginTimeout: 60000,
 })
+
+declare module "fastify" {
+  export interface FastifyInstance<
+    HttpServer = Server,
+    HttpRequest = IncomingMessage,
+    HttpResponse = ServerResponse,
+    > {
+      initDb: InitDb
+     }
+}
 
 const swaggerOption = {
     swagger: {
@@ -37,8 +51,14 @@ const swaggerOption = {
 // Registration order matters
 server.register(mongoosePlugin)
 
-// Setup swagger plugin 
+// Setup swagger plugin
 server.register(swagger, swaggerOption)
+
+// jwt
+server.register(fastifyJWT, {
+  secret: process.env.JWT_SECRET || 'secret_secret_secret',
+  trusted: validateToken // hook to allow blacklisting of tokens
+})
 
 // Setup services
 server.register(servicesPlugin)
@@ -48,6 +68,10 @@ server.register(servicesPlugin)
 // TODO: Add 'plugin-meta' export to plugins so that in future to force plugin ordering implicitly
 server.register(transactionPlugin)
 
+// Setup initial Db Documents
+// cache them in memory - roles, privileges, resources, accesses
+server.register(initDbDocsPlugin)
+
 // This is the global error handler for all the routes
 // If needed errorhandlers can be set for indivisual routes too
 // But id they are added they will override this handler
@@ -56,10 +80,15 @@ server.setErrorHandler(globalErrorHandler)
 // Setup grpc
 server.register(setupGrpcPlugin)
 
+async function validateToken(request: fastify.FastifyRequest, decodedToken: {[k:string]: any}) {
+  return true
+}
+
 // Register the routes
 server.register(userRoutes, { prefix: '/api/v1/user' })
 server.register(mailboxRoutes, { prefix: '/api/v1/mailbox' })
 server.register(messageRoutes, { prefix: '/api/v1/message' })
+server.register(loginRoutes, { prefix: '/api/v1/' }) // login
 
 // IMPORTANT! This is temp, This has to be removed once auth handlers are intigrated
 // For now, pass the username explicity in a query param to all the requests
@@ -82,7 +111,7 @@ server.addHook('onRequest', async (req: any, rep: any) => {
 
 const startHTTPServer = async () => {
     try {
-        let port = <number>config.get("server.port")
+        let port:number = config.get("server.port")
         await server.listen(port, "127.0.0.1");
     } catch (e) {
         server.log.error("Could not serve: ", e)

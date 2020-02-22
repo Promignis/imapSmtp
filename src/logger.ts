@@ -16,7 +16,7 @@ if (!fs.existsSync(filePath)) {
 // Formats
 // This will colorize the logs in console
 const colorizeFormat = format.colorize({ colors: { info: 'blue', error: 'red', warn: 'yellow' } })
-// This will log the stack trace 
+// This will log the stack trace
 const errorsFormat = format.errors({ stack: true })
 
 
