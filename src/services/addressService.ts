@@ -10,7 +10,7 @@ class AddressService {
     Address: mongoose.Model<IAddress>
     Domain: string
 
-    constructor(model: mongoose.Model<any>, domain: string) {
+    constructor(model: mongoose.Model<IAddress>, domain: string) {
         this.Address = model
         this.Domain = domain
     }

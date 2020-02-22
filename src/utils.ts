@@ -33,3 +33,12 @@ export async function bcryptHash(rawPassword: string): Promise<string>{
         })
     })
 }
+
+export async function bcryptVerify(password: string, passwordHash: string): Promise<boolean> {
+  let err, result: any
+  [err, result] = await to(bcrypt.compare(password, passwordHash))
+  if(err != null) {
+    throw err
+  }
+  return result
+}

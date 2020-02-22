@@ -1,4 +1,4 @@
-import { ROLES } from '../services/roles'
+import { ROLES } from '../services/roleService'
 
 export const userCreateSchema = {
     body: {
@@ -27,6 +27,7 @@ export const userCreateSchema = {
         }
     }
 }
+
 
 export const getAllMailboxSchema = {
     body: {
@@ -61,13 +62,35 @@ export const getAllMailboxSchema = {
     }
 }
 
+export const loginSchema = {
+    body: {
+        type: 'object',
+        required: ['username', 'password'],
+        properties: {
+            username: { type: 'string' },
+            password: { type: 'string' },
+        },
+        additionalProperties: false
+    },
+    response: {
+        200: {
+            type: 'object',
+            required: ['token'],
+            properties: {
+              token: { type: 'string' }
+            },
+            additionalProperties: false
+        }
+    }
+}
+
 export const getPaginatedMessagesSchema = {
     body: {
         type: 'object',
         required: ['id'],
         properties: {
             //This is the optional address id, if not given then defaults to user's primary addresss
-            addressId: { type: 'string', minLength: 24, maxLength: 24 },// Using mongo ObjectId type that has 12 bytes, 24 char string in Hex 
+            addressId: { type: 'string', minLength: 24, maxLength: 24 },// Using mongo ObjectId type that has 12 bytes, 24 char string in Hex
             // Mailbox Id
             id: { type: 'string', minLength: 24, maxLength: 24 },
             limit: { type: 'number', maximum: 50 }, // Defaults to 20

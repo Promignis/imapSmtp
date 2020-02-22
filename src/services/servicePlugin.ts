@@ -7,6 +7,10 @@ import MessageService from '../services/messageService'
 import ThreadService from '../services/threadService'
 import { DB, GridFSOpts } from '../db/types'
 import GridFS from '../db/gridFS'
+import RoleService from '../services/roleService'
+import PrivilegeService from '../services/privilegeService'
+import ResourceService from '../services/resourceService'
+import AccessService from '../services/accessService'
 import fastifyPlugin from 'fastify-plugin'
 
 async function setupServicesPlugin(fastify: any, { }, done: Function) {
@@ -28,6 +32,10 @@ async function setupServicesPlugin(fastify: any, { }, done: Function) {
     }
     let gridFS = new GridFS(opts)
     let attachmentService = new AttachmentService(gridFS)
+    let roleService = new RoleService(db.main.models.Role)
+    let privilegeService = new PrivilegeService(db.main.models.Privilege)
+    let resourceService = new ResourceService(db.main.models.Resource)
+    let accessService = new AccessService(db.main.models.Access)
 
     // Decorate fastify with the services
     let decorator: any = {
@@ -37,7 +45,11 @@ async function setupServicesPlugin(fastify: any, { }, done: Function) {
         userService,
         attachmentService,
         threadService,
-        messageService
+        messageService,
+        roleService,
+        privilegeService,
+        resourceService,
+        accessService
     }
 
     fastify.decorate('services', decorator)
