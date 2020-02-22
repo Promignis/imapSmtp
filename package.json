@@ -22,7 +22,9 @@
     "grpc": "^1.24.2",
     "http-status-codes": "^1.4.0",
     "mali": "^0.20.0",
+    "mongodb-extended-json": "^1.11.0",
     "mongoose": "^5.8.10",
+    "object-path": "^0.11.4",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^4.4.2"
   },
