@@ -1,7 +1,11 @@
-{   
+{
     "db": {
         "connection": {
             "autoIndex": false
         }
+    },
+     "logger": {
+        "logDirectory": "/home/bizgazemail/log",
+        "logFile": "server.log"
     }
 }

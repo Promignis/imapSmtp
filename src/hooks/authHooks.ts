@@ -16,7 +16,7 @@ export function authenticationHook(fastify:any){
     }
 
     let user:any
-    [err, user] = await to(fastify.services.userService.User.findOne({ username: jwt.user }))
+    [err, user] = await to(fastify.services.userService.User.findOne({ username: jwt.username }))
     if(err != null) {
       throw err
     }
