@@ -1,4 +1,5 @@
 import { HTTP_STATUS, ServerError, INT_ERRORS } from '../errors'
+import logger from '../logger'
 
 interface ErrorMessage {
     status: number,
@@ -11,6 +12,9 @@ export function globalErrorHandler(error: any, request: any, reply: any) {
     let msg: ErrorMessage
     let message: string[] = []
     if (error instanceof ServerError) {
+
+        // TODO: add better log message
+        logger.error(`Server error name: ${error.name} status: ${error.status}, message: ${error.message}`)
         switch (error.status) {
             case HTTP_STATUS.BAD_REQUEST:
                 if (error.name == INT_ERRORS.API_VALIDATION_ERR) {
@@ -54,6 +58,15 @@ export function globalErrorHandler(error: any, request: any, reply: any) {
                 reply
                     .code(HTTP_STATUS.INTERNAL_SERVER_ERROR)
                     .send(msg)
+            default:
+              msg = {
+                  status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+                  error: 'Internal Server Error',
+                  message,
+              }
+              reply
+                .code(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+                .send(msg)
         }
     }
     else {
