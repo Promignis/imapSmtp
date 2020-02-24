@@ -77,7 +77,7 @@ export const loginSchema = {
             type: 'object',
             required: ['token'],
             properties: {
-              token: { type: 'string' }
+                token: { type: 'string' }
             },
             additionalProperties: false
         }
@@ -172,4 +172,45 @@ export const getThreadedMessagesSchema = {
             }
         }
     }
+}
+
+export const outboundSchema = {
+    body: {
+        type: 'object',
+        required: ['to', 'action'],
+        properties: {
+            to: {
+                oneOf: [
+                    { type: 'array', items: { type: 'string', isNotEmpty: true } },
+                    { type: 'string', isNotEmpty: true }
+                ]
+            },
+            cc: {
+                oneOf: [
+                    { type: 'array', items: { type: 'string', isNotEmpty: true } },
+                    { type: 'string', isNotEmpty: true }
+                ]
+            },
+            bcc: {
+                oneOf: [
+                    { type: 'array', items: { type: 'string', isNotEmpty: true } },
+                    { type: 'string', isNotEmpty: true }
+                ]
+            },
+            subject: { type: 'string' },
+            text: { type: 'string' },
+            html: { type: 'string' },
+            action: {
+                type: 'string', enum: ['send', 'forward', 'reply']
+            },
+            files: {
+                oneOf: [
+                    { type: 'array', items: { type: 'object' } },
+                    { type: 'object' }
+                ]
+            },
+            parentId: { type: 'string', minLength: 24, maxLength: 24 }
+        },
+        additionalProperties: false
+    },
 }

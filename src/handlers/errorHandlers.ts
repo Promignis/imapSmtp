@@ -11,9 +11,8 @@ export function globalErrorHandler(error: any, request: any, reply: any) {
     let msg: ErrorMessage
     let message: string[] = []
     if (error instanceof ServerError) {
-
         // TODO: add better log message
-        logger.error(`Server error name: ${error.name} status: ${error.status}, message: ${error.message}`, error)
+        logger.error(`Server error name: ${error.name} status: ${error.status}, message: ${JSON.stringify(error.message)}`, error)
         switch (error.status) {
             case HTTP_STATUS.BAD_REQUEST:
                 if (error.name == INT_ERRORS.API_VALIDATION_ERR) {
@@ -25,7 +24,9 @@ export function globalErrorHandler(error: any, request: any, reply: any) {
                      *      keyword: 'type',
                      *      dataPath: '.tempPassword',
                      *      schemaPath: '#/properties/tempPassword/type',
-                     *      params: { type: 'string' },message: 'should be string'}
+                     *      params: { type: 'string' },
+                     *      message: 'should be string'
+                     *  }
                      * ]
                      */
                     if (Array.isArray(error.message)) {
@@ -80,6 +81,7 @@ export function globalErrorHandler(error: any, request: any, reply: any) {
                     .send(msg)
         }
     } else {
+        logger.error(`Error: ${error.name || ""} status: ${error.status || ""}, message: ${JSON.stringify(error.message)}`, error)
         message.push("Something went wrong")
         // Genereic Error Message
         msg = {

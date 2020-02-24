@@ -1,10 +1,12 @@
 import {
     getPaginatedMessagesSchema,
-    getThreadedMessagesSchema
+    getThreadedMessagesSchema,
+    outboundSchema
 } from './routeSchemas'
 import {
     getPaginatedMessages,
-    getThreadedMessages
+    getThreadedMessages,
+    outboundMessage
 } from '../handlers/messageHandlers'
 
 export default async function (fastify: any, options: object) {
@@ -23,6 +25,14 @@ export default async function (fastify: any, options: object) {
         schema: getThreadedMessagesSchema,
         attachValidation: true,
         handler: getThreadedMessages(fastify)
+    })
+
+    fastify.route({
+        method: 'POST',
+        url: '/outbound/',
+        schema: outboundSchema,
+        attachValidation: true,
+        handler: outboundMessage(fastify)
     })
 
 }

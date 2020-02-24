@@ -1,4 +1,4 @@
-import fastify, { JWTTypes } from "fastify"
+import fastify from "fastify"
 import { Server, IncomingMessage, ServerResponse } from "http"
 import config from './config'
 import logger from './logger'
@@ -14,24 +14,29 @@ import mailboxRoutes from './routes/mailboxRoutes'
 import messageRoutes from './routes/messageRoutes'
 import loginRoutes from './routes/authRoutes'
 import fastifyJWT from 'fastify-jwt'
-import { to } from './utils'
-
+import { isNotEmpty } from './ajvPlugins'
+import { fileHandlerPlugin } from './fileHandlerPlugin'
 
 // If using http2 we'd pass <http2.Http2Server, http2.Http2ServerRequest, http2.Http2ServerResponse>
 const server: fastify.FastifyInstance<Server, IncomingMessage, ServerResponse> = fastify({
     // Instead of using Fastify default logger use our custom logger internally
     logger: logger,
     pluginTimeout: 60000,
+    ajv: {
+        plugins: [
+            [isNotEmpty]
+        ]
+    }
 })
 
 declare module "fastify" {
-  export interface FastifyInstance<
-    HttpServer = Server,
-    HttpRequest = IncomingMessage,
-    HttpResponse = ServerResponse,
-    > {
-      initDb: InitDb
-     }
+    export interface FastifyInstance<
+        HttpServer = Server,
+        HttpRequest = IncomingMessage,
+        HttpResponse = ServerResponse,
+        > {
+        initDb: InitDb
+    }
 }
 
 const swaggerOption = {
@@ -55,9 +60,12 @@ server.register(mongoosePlugin)
 server.register(swagger, swaggerOption)
 
 // jwt
+async function validateToken(request: fastify.FastifyRequest, decodedToken: { [k: string]: any }) {
+    return true
+}
 server.register(fastifyJWT, {
-  secret: process.env.JWT_SECRET as string,
-  trusted: validateToken // hook to allow blacklisting of tokens
+    secret: process.env.JWT_SECRET || 'secret_secret_secret',
+    trusted: validateToken // hook to allow blacklisting of tokens
 })
 
 // Setup services
@@ -80,9 +88,8 @@ server.setErrorHandler(globalErrorHandler)
 // Setup grpc
 server.register(setupGrpcPlugin)
 
-async function validateToken(request: fastify.FastifyRequest, decodedToken: {[k:string]: any}) {
-  return true
-}
+// Setup multipart content handler and file upload handler
+server.register(fileHandlerPlugin)
 
 // Register the routes
 server.register(userRoutes, { prefix: '/api/v1/user' })
@@ -111,7 +118,7 @@ server.addHook('onRequest', async (req: any, rep: any) => {
 
 const startHTTPServer = async () => {
     try {
-        let port:number = config.get("server.port")
+        let port: number = config.get("server.port")
         await server.listen(port, "127.0.0.1");
     } catch (e) {
         server.log.error("Could not serve: ", e)
