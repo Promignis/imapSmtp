@@ -12,14 +12,23 @@ export function authenticationHook(fastify: any) {
     let err: any, jwt: any
     [err, jwt] = await to(request.jwtVerify())
 
-    if (err != null) {
-      throw new ServerError(HTTP_STATUS.UNAUTHORIZED, err.message, INT_ERRORS.SERVER_ERR)
+    if(err != null) {
+      throw new ServerError(
+        HTTP_STATUS.UNAUTHORIZED,
+        "Error with jwt header",
+        'Unauthorized'
+      )
     }
 
     let user: any
     [err, user] = await to(fastify.services.userService.User.findOne({ username: jwt.username }))
-    if (err != null) {
-      throw err
+
+    if(err != null) {
+      throw new ServerError(
+        HTTP_STATUS.UNAUTHORIZED,
+        "Invalid details",
+        'Unauthorized'
+      )
     }
     // TODO: do in better way
     request.user = user
@@ -43,7 +52,8 @@ export function authorizationHook(fastify: any) {
   permissionMap[USER_CREATE][ROLES.USER] = [PRIVILEGES.CREATE]
   return async (request: fastify.FastifyRequest, reply: fastify.FastifyReply<ServerResponse>) => {
 
-    const user: IUser = (request.user as IUser)
+    // TODO: do this more securely
+    const user:IUser = (request.user as IUser)
 
     // url not sent
     if (request.raw.url === "" || request.raw.url == null) {
