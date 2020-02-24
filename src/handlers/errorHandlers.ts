@@ -7,14 +7,13 @@ interface ErrorMessage {
     message: string[]
 }
 
-// TODO: Add logger
 export function globalErrorHandler(error: any, request: any, reply: any) {
     let msg: ErrorMessage
     let message: string[] = []
     if (error instanceof ServerError) {
 
         // TODO: add better log message
-        logger.error(`Server error name: ${error.name} status: ${error.status}, message: ${error.message}`)
+        logger.error(`Server error name: ${error.name} status: ${error.status}, message: ${error.message}`, error)
         switch (error.status) {
             case HTTP_STATUS.BAD_REQUEST:
                 if (error.name == INT_ERRORS.API_VALIDATION_ERR) {
@@ -47,7 +46,7 @@ export function globalErrorHandler(error: any, request: any, reply: any) {
                 reply
                     .code(HTTP_STATUS.BAD_REQUEST)
                     .send(msg)
-
+                break;
             case HTTP_STATUS.INTERNAL_SERVER_ERROR:
                 message.push("Something went wrong")
                 msg = {
@@ -58,18 +57,29 @@ export function globalErrorHandler(error: any, request: any, reply: any) {
                 reply
                     .code(HTTP_STATUS.INTERNAL_SERVER_ERROR)
                     .send(msg)
+                break;
+            case HTTP_STATUS.UNAUTHORIZED:
+                message.push(error.message)
+                msg = {
+                    status: HTTP_STATUS.UNAUTHORIZED,
+                    error: 'Unauthorized',
+                    message: message
+                }
+                reply
+                    .code(HTTP_STATUS.UNAUTHORIZED)
+                    .send(msg)
+                break;
             default:
-              msg = {
-                  status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-                  error: 'Internal Server Error',
-                  message,
-              }
-              reply
-                .code(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-                .send(msg)
+                msg = {
+                    status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+                    error: 'Internal Server Error',
+                    message,
+                }
+                reply
+                    .code(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+                    .send(msg)
         }
-    }
-    else {
+    } else {
         message.push("Something went wrong")
         // Genereic Error Message
         msg = {

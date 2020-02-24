@@ -4,20 +4,21 @@ import { ServerResponse } from "http"
 import { ROLES } from '../services/roleService'
 import { PRIVILEGES } from '../services/privilegeService'
 import { IUser } from '../db/users'
+import { ServerError, HTTP_STATUS, INT_ERRORS } from '../errors'
 
 
-export function authenticationHook(fastify:any){
-  return async(request: fastify.FastifyRequest, reply: fastify.FastifyReply<ServerResponse>) => {
-    let err:any, jwt:any
+export function authenticationHook(fastify: any) {
+  return async (request: fastify.FastifyRequest, reply: fastify.FastifyReply<ServerResponse>) => {
+    let err: any, jwt: any
     [err, jwt] = await to(request.jwtVerify())
 
-    if(err != null) {
-      throw err
+    if (err != null) {
+      throw new ServerError(HTTP_STATUS.UNAUTHORIZED, err.message, INT_ERRORS.SERVER_ERR)
     }
 
-    let user:any
+    let user: any
     [err, user] = await to(fastify.services.userService.User.findOne({ username: jwt.username }))
-    if(err != null) {
+    if (err != null) {
       throw err
     }
     // TODO: do in better way
@@ -29,11 +30,11 @@ export function authenticationHook(fastify:any){
 // Always have authorization hook after authenticationHook
 export function authorizationHook(fastify: any) {
   // TODO: get this from config and use same for routes
-  const USER_CREATE:string = "/api/v1/user/create/"
+  const USER_CREATE: string = "/api/v1/user/create/"
 
   // so far resource are
   // implicit based on api
-  const permissionMap:any = {
+  const permissionMap: any = {
   }
 
   // permissions needed for user role to
@@ -42,14 +43,14 @@ export function authorizationHook(fastify: any) {
   permissionMap[USER_CREATE][ROLES.USER] = [PRIVILEGES.CREATE]
   return async (request: fastify.FastifyRequest, reply: fastify.FastifyReply<ServerResponse>) => {
 
-    const user:IUser = (request.user as IUser)
+    const user: IUser = (request.user as IUser)
 
     // url not sent
-    if(request.raw.url === "" || request.raw.url == null) {
+    if (request.raw.url === "" || request.raw.url == null) {
       throw new Error("Internal error")
     }
 
-    if(permissionMap[request.raw.url] != null) {
+    if (permissionMap[request.raw.url] != null) {
       const requiredPermissions = permissionMap[request.raw.url][user.role]
       // TODO: do checks after user model is updated with access
 
