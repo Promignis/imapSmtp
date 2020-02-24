@@ -12,10 +12,12 @@
   "dependencies": {
     "@grpc/proto-loader": "^0.5.3",
     "@types/config": "0.0.36",
+    "@types/express-fileupload": "^1.1.2",
     "@types/mongoose": "^5.7.0",
     "@types/object-path": "^0.11.0",
     "bcrypt": "^3.0.8",
     "config": "^3.2.5",
+    "express-fileupload": "^1.1.6",
     "fastify": "^2.11.0",
     "fastify-jwt": "^1.2.1",
     "fastify-plugin": "^1.6.0",
