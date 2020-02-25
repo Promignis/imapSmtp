@@ -2,6 +2,8 @@ import mongoose from "mongoose"
 import { HTTP_STATUS, ServerError, MONGO_CODES, INT_ERRORS } from '../errors'
 import { to, bcryptVerify } from '../utils'
 import { IUser } from '../db/users'
+import { UserCreateOpts, UserProfile } from '../types/types'
+import { ROLES } from './roleService'
 import {
     ServiceContext,
     FindQuery
@@ -65,6 +67,36 @@ class UserService {
         }
 
         return false
+    }
+
+    async createSuperAdminIfNotExist(ctx: ServiceContext, username: string, password: string, fastify: any): Promise<IUser> {
+        let dbCallOptions: any = {}
+        if (ctx.session) {
+            dbCallOptions.session = ctx.session
+        }
+
+        let err: any, existingUser: any
+        [err, existingUser] = await to(this.User.findOne({ 'username': username }, null, dbCallOptions).exec())
+        if(err != null) {
+          throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.Name || INT_ERRORS.SERVER_ERR)
+        }
+        if(!existingUser) {
+          let options: UserCreateOpts = {}
+          let profile: UserProfile = {
+              firstName: "super_admin",
+              lastName: ""
+          }
+          options.profile = profile
+          options.role = ROLES.SUPER_ADMIN;
+          options.tempPassword = password
+
+          let err: any
+          let resp: any
+
+          [err, resp] = await to(fastify.tx.userTx.createNewUser(username, options))
+					return resp
+        }
+        return existingUser
     }
 
     async findUsers(ctx: ServiceContext, query: FindQuery, options?: object): Promise<any> {

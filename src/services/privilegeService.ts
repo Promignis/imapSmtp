@@ -24,6 +24,9 @@ export const PRIVILEGES:AllowedPrivileges = {
 export const CRUD:string[] = [PRIVILEGES.CREATE, PRIVILEGES.READ, PRIVILEGES.UPDATE, PRIVILEGES.DELETE]
 export const CRU:string[] = [PRIVILEGES.CREATE, PRIVILEGES.READ, PRIVILEGES.UPDATE]
 export const RU:string[] = [PRIVILEGES.READ, PRIVILEGES.UPDATE]
+export const R:string[] = [PRIVILEGES.READ]
+export const U:string[] = [PRIVILEGES.UPDATE]
+export const CUD:string[] = [PRIVILEGES.CREATE, PRIVILEGES.UPDATE, PRIVILEGES.DELETE]
 
 class PrivilegeService {
 

@@ -27,11 +27,15 @@ import {
  * TODO: add super admin role
  */
 
-type AllowedRoles = {'ADMIN': string, 'USER': string }
+// SUPER_ADMIN is the first default user created when starting the server
+// ADMIN generally all privileges (over own and other users it has created)
+// USER has least privileges (mostly over own things)
+type AllowedRoles = {'ADMIN': string, 'USER': string, 'SUPER_ADMIN': string }
 
 export const ROLES:AllowedRoles = {
     ADMIN: 'admin',
-    USER: 'user'
+    USER: 'user',
+    SUPER_ADMIN: 'super_admin'
 }
 
 class RoleService {
@@ -43,7 +47,8 @@ class RoleService {
     this.Role = role
     this.ROLES = {
       ADMIN: 'admin',
-      USER: 'user'
+      USER: 'user',
+      SUPER_ADMIN: 'super_admin'
     }
   }
 

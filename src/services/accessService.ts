@@ -4,7 +4,7 @@ import mongoose from "mongoose"
 import { to } from '../utils'
 import { RESOURCES } from './resourceService'
 import { ROLES } from './roleService'
-import { CRU, RU, CRUD, PRIVILEGES } from './privilegeService'
+import { R, U, CRU, RU, CUD, CRUD, PRIVILEGES } from './privilegeService'
 import {
     ServiceContext
 } from '../types/types'
@@ -33,7 +33,8 @@ const defaultAccessMap = ():AccessMap => ({
 
 interface AllowedAccesses {
   user: AccessMap,
-  admin: AccessMap
+  admin: AccessMap,
+  super_admin: AccessMap
 }
 
 class AccessService {
@@ -43,18 +44,28 @@ class AccessService {
 
   constructor(access:mongoose.Model<IAccess>) {
     this.Access = access
-    this.ACCESSES = {'user':defaultAccessMap(), 'admin':defaultAccessMap()}
+    this.ACCESSES = { 'user': defaultAccessMap(), 'admin': defaultAccessMap(), 'super_admin': defaultAccessMap() }
 
     // admin access
     this.ACCESSES.admin[RESOURCES.USER] = CRU
     this.ACCESSES.admin[RESOURCES.USER_PROFILE_NAME] = CRUD
     this.ACCESSES.admin[RESOURCES.USER_ROLE] = RU
-    this.ACCESSES.admin[RESOURCES.USER_PASSWORD] = [PRIVILEGES.UPDATE]
+    this.ACCESSES.admin[RESOURCES.USER_PASSWORD] = U
     this.ACCESSES.admin[RESOURCES.ADDRESS] = CRUD
     this.ACCESSES.admin[RESOURCES.STORAGE] = CRU
     this.ACCESSES.admin[RESOURCES.SETTINGS] = RU
     this.ACCESSES.admin[RESOURCES.USER_PROFILE] = RU
-    this.ACCESSES.admin[RESOURCES.USER_PROFILE_LAST_LOGIN] = [PRIVILEGES.READ]
+    this.ACCESSES.admin[RESOURCES.USER_PROFILE_LAST_LOGIN] = R
+
+    this.ACCESSES.super_admin[RESOURCES.USER] = CRUD
+    this.ACCESSES.super_admin[RESOURCES.USER_PROFILE_NAME] = CRUD
+    this.ACCESSES.super_admin[RESOURCES.USER_ROLE] = RU
+    this.ACCESSES.super_admin[RESOURCES.USER_PASSWORD] = CUD
+    this.ACCESSES.super_admin[RESOURCES.ADDRESS] = CRUD
+    this.ACCESSES.super_admin[RESOURCES.STORAGE] = CRUD
+    this.ACCESSES.super_admin[RESOURCES.SETTINGS] = RU
+    this.ACCESSES.super_admin[RESOURCES.USER_PROFILE] = RU
+    this.ACCESSES.super_admin[RESOURCES.USER_PROFILE_LAST_LOGIN] = R
   }
 
   // create the default accesses
