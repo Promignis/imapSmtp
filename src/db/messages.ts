@@ -94,8 +94,8 @@ var messageSchema = new Schema({
             filename: { type: String, required: true },
             contentDisposition: { type: String },
             contentType: { type: String, required: true },
-            transferEncoding: { type: String, required: true },
-            contentId: { type: String, required: true },
+            transferEncoding: { type: String },
+            contentId: { type: String },
             related: { type: String, required: true },
             size: { type: Number, required: true } //// Number of bytes
         }

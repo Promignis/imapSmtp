@@ -141,7 +141,6 @@ function saveInbound(fastify: any) {
         let f: any = fastify
         let mailData = ctx.request.req
         let uniquercpts: string[] = mailData.uniquercpt
-
         for (const address of uniquercpts) {
             // Get message associations
             // Get address
@@ -192,7 +191,7 @@ function saveInbound(fastify: any) {
                 let id: mongoose.Types.ObjectId = mongoose.Types.ObjectId(att.id)
                 let attachment: IAttachment = {
                     fileId: id,
-                    filename: att.filename,
+                    filename: att.fileName,
                     contentDisposition: att.contentDisposition.value,
                     contentType: att.contentType.value,
                     contentId: att.contentId,

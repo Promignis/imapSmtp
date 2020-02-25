@@ -293,13 +293,13 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     // If content type header exists but is maybe empty then default value is used
     let contentType = libmime.parseHeaderValue(attachmentHeaders['content-type'][0] || 'application/octet-stream') // If content type is not found then default to application/octet-stream
 
-    let contentDsiposition
+    let contentDisposition
     // If content disposition is not present then default it to 'attachment'
     // refer: https://tools.ietf.org/html/rfc6266
     if (attachmentHeaders['content-disposition']) {
-        contentDsiposition = libmime.parseHeaderValue(attachmentHeaders['content-disposition'][0] || 'attachment')
+        contentDisposition = libmime.parseHeaderValue(attachmentHeaders['content-disposition'][0] || 'attachment')
     } else {
-        contentDsiposition = libmime.parseHeaderValue('attachment')
+        contentDisposition = libmime.parseHeaderValue('attachment')
     }
 
     let contentTransferEncoding
@@ -328,9 +328,9 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     } else if (contentType.params && contentType.params.name) {
         // If for some reason file name not given by haraka parser then try to get name from the content type header
         fileName = contentType.params.name
-    } else if (contentDsiposition.params && contentDsiposition.params.name) {
+    } else if (contentDisposition.params && contentDisposition.params.name) {
         // try to get name from the content disposition header
-        fileName = contentDsiposition.params.name
+        fileName = contentDisposition.params.name
     } else {
         // Create a new name
         let name = uuidv4()
@@ -342,7 +342,7 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     let attachment = {
         fileName,
         contentType,
-        contentDsiposition,
+        contentDisposition,
         contentTransferEncoding,
         contentId
     }

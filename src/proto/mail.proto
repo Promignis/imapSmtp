@@ -22,7 +22,7 @@ message Chunk {
 message Attachments {
   string id = 1;
   string fileName = 2;
-  HeaderValue contentDsiposition = 3;
+  HeaderValue contentDisposition = 3;
   HeaderValue contentType = 4;
   string contentTransferEncoding = 5;
   string contentId = 6;
