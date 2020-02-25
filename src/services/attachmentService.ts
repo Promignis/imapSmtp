@@ -1,4 +1,5 @@
 import GridFS from '../db/gridFS'
+import mongoose from 'mongoose'
 import { AttachmentInfo } from '../types/types'
 import { GridFSWriteOpts } from '../db/types'
 import { IAttachment } from '../db/attachments'
@@ -41,6 +42,10 @@ class AttachmentService {
 
     downloadAttachment() {
 
+    }
+
+    getDownloadStream(id: mongoose.Types.ObjectId): NodeJS.ReadableStream {
+        return this.gridFS.read(id)
     }
 }
 

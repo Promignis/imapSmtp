@@ -24,10 +24,10 @@ export function generateRandomString(length: number): string {
     return crypto.randomBytes(Math.ceil(length * 0.5)).toString('hex').slice(0, length);
 }
 
-export async function bcryptHash(rawPassword: string): Promise<string>{
+export async function bcryptHash(rawPassword: string): Promise<string> {
     let saltRounds = 10;
     return new Promise((res, rej) => {
-        bcrypt.hash(rawPassword, saltRounds, function(err, hash){
+        bcrypt.hash(rawPassword, saltRounds, function (err, hash) {
             if (err) rej(err)
             res(hash)
         })
@@ -35,10 +35,15 @@ export async function bcryptHash(rawPassword: string): Promise<string>{
 }
 
 export async function bcryptVerify(password: string, passwordHash: string): Promise<boolean> {
-  let err, result: any
-  [err, result] = await to(bcrypt.compare(password, passwordHash))
-  if(err != null) {
-    throw err
-  }
-  return result
+    let err, result: any
+    [err, result] = await to(bcrypt.compare(password, passwordHash))
+    if (err != null) {
+        throw err
+    }
+    return result
+}
+
+export function validEmail(email: string) {
+    const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    return re.test(email)
 }

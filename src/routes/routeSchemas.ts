@@ -201,7 +201,7 @@ export const outboundSchema = {
             text: { type: 'string' },
             html: { type: 'string' },
             action: {
-                type: 'string', enum: ['send', 'forward', 'reply']
+                type: 'string', enum: ['send', 'forward', 'reply', 'replyAll']
             },
             files: {
                 oneOf: [
@@ -209,7 +209,8 @@ export const outboundSchema = {
                     { type: 'object' }
                 ]
             },
-            parentId: { type: 'string', minLength: 24, maxLength: 24 }
+            parentId: { type: 'string', minLength: 24, maxLength: 24 },
+            addressId: { type: 'string', minLength: 24, maxLength: 24 }
         },
         additionalProperties: false
     },

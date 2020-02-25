@@ -1,7 +1,10 @@
 import mongoose from 'mongoose'
 import { ServerError, HTTP_STATUS, INT_ERRORS } from '../errors'
-import { PaginationOpts, FindQuery } from '../types/types'
+import { PaginationOpts, FindQuery, AttachmentInfo } from '../types/types'
 import { to, validEmail } from '../utils'
+import { IMessage, IAttachment } from '../db/messages'
+import MimeNode from 'nodemailer/lib/mime-node'
+import MailComposer from 'nodemailer/lib/mail-composer'
 import fs from 'fs'
 import util from 'util'
 const unlinkAsync = util.promisify(fs.unlink)
@@ -142,6 +145,18 @@ export function outboundMessage(fastify: any): any {
 
         let tempFilePaths: string[] = []
         let truncatedFileNames: string[] = []
+        let files: any[] = []
+        let action = req.body.action
+        let recipients: any = {
+            to: [],
+            cc: [],
+            bcc: []
+        }
+        let inReplyTo: string = ""
+        let references: string = ""
+        let subject: string = req.body.subject || "" // If action is reply/fwd then this subject is ignored and subject is taken from parent message
+        let text = req.body.text || ""
+        let html = req.body.html || ""
 
         // Check if any files were larger than the allowed size
         if (req.body.files) {
@@ -157,8 +172,6 @@ export function outboundMessage(fastify: any): any {
              * mimetype: 'text/plain',
              * md5: '526314450985ff1b016eec41be663239',
              */
-            let files: any[] = []
-
             if (Array.isArray(req.body.files)) {
                 files = req.body.files
             } else {
@@ -182,7 +195,7 @@ export function outboundMessage(fastify: any): any {
 
         // Validations
         // If option is reply or forward then parentId is needed
-        if (req.body.action == 'reply' || req.body.action == 'forward') {
+        if (action == 'reply' || action == 'forward' || action == 'replyAll') {
             if (!req.body.parentId) {
                 validations.push({
                     dataPath: `parentId`,
@@ -196,22 +209,18 @@ export function outboundMessage(fastify: any): any {
         fields.forEach(function (field: string) {
             if (req.body[field]) {
                 if (Array.isArray(req.body[field])) {
-                    req.body[field].forEach(function (mail: string) {
-                        if (!validEmail(mail)) {
-                            validations.push({
-                                dataPath: `${field}:${mail}`,
-                                message: 'Invalid email address'
-                            })
-                        }
-                    })
+                    recipients[field] = req.body[field]
                 } else {
-                    if (!validEmail(req.body[field])) {
+                    recipients[field].push(req.body[field])
+                }
+                recipients[field].forEach(function (mail: string) {
+                    if (!validEmail(mail)) {
                         validations.push({
-                            dataPath: `${field}:${req.body[field]}`,
+                            dataPath: `${field}:${mail}`,
                             message: 'Invalid email address'
                         })
                     }
-                }
+                })
             }
         })
 
@@ -232,12 +241,308 @@ export function outboundMessage(fastify: any): any {
                 INT_ERRORS.API_VALIDATION_ERR
             )
         }
+        console.log(req.body, 'req.body')
 
-        // upload file
-        // thread and save message to sent
+        let attachments: IAttachment[] = []
+        // upload files to gridfs and create attachment objects
+        for (let i in files) {
+            let info: AttachmentInfo = {
+                filename: files[i].name,
+                contentType: files[i].mimetype,
+                count: 1
+            }
+            let readStream = fs.createReadStream(files[i].tempFilePath)
+            let savedFile: any
+            let err: any
+            [err, savedFile] = await to(f.services.attachmentService.saveAttachment({}, readStream, info))
+
+            if (err != null) {
+                await cleanupTemp(tempFilePaths)
+                throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
+            }
+
+            let att: IAttachment = {
+                fileId: savedFile._id,
+                filename: files[i].name,
+                contentDisposition: 'attachment',
+                contentType: files[i].mimetype,
+                contentId: "",
+                transferEncoding: "",
+                related: false,
+                size: files[i].size
+            }
+            attachments.push(att)
+        }
+
+        // All files uploaded to gridfs , now cleanup the temp files
+        await cleanupTemp(tempFilePaths)
+
+        // thread and save message to sent mailbox
+        // Get address
+        let addressId: mongoose.Types.ObjectId = user.primeAddress
+        if (req.body.addressId) {
+            addressId = mongoose.Types.ObjectId(req.body.addressId)
+        }
+        let err: any
+        let addressQuery: FindQuery = {
+            filter: { _id: addressId },
+            projection: 'address'
+        }
+        let addressRes: any
+        [err, addressRes] = await to(f.services.addressService.findAddresses({}, addressQuery))
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
+        }
+        if (addressRes.length == 0) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `No documents found for: ${JSON.stringify(addressQuery)}`, INT_ERRORS.SERVER_ERR)
+        }
+
+        let from = addressRes[0].address
+
+        // Get Mailbox
+        let mailboxName = "Sent Mail"
+        let mailboxQuery: FindQuery = {
+            filter: {
+                user: user._id,
+                address: addressId,
+                name: mailboxName
+            },
+            projection: '_id retention retentionTime uidNext modifyIndex'
+        }
+        let mailboxResults: any
+        [err, mailboxResults] = await to(f.services.mailboxService.findMailboxes({}, mailboxQuery))
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
+        }
+        if (mailboxResults.length == 0) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `No documents found for: ${JSON.stringify(mailboxQuery)}`, INT_ERRORS.SERVER_ERR)
+        }
+
+        // If action is send/forward then need to get references from the parent
+        if (action == 'reply' || action == 'forward' || action == 'replyAll') {
+            // Get parent
+            let parentId: mongoose.Types.ObjectId = mongoose.Types.ObjectId(req.body.parentId)
+            let messageQuery: FindQuery = {
+                filter: {
+                    _id: parentId,
+                    user: user._id
+                },
+                projection: 'parsedHeaders messageId'
+            }
+            let messageRes: any
+            [err, messageRes] = await to(f.services.messageService.findMessages({}, messageQuery))
+            if (err != null) {
+                throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
+            }
+            if (messageRes.length == 0) {
+                throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `No documents found for: ${JSON.stringify(messageQuery)}`, INT_ERRORS.SERVER_ERR)
+            }
+
+            inReplyTo = messageRes[0].messageId
+            let parentReferences = messageRes[0].parsedHeaders['references'].replace(/\s\s+/g, ' ').trim()
+
+            // Add parent message id to references list , but only if it does not exist
+            let uniqueReferences = new Set()
+            uniqueReferences.add(inReplyTo)
+            parentReferences.split(' ').forEach(function (r: any) {
+                uniqueReferences.add(r)
+            })
+            references = Array.from(uniqueReferences).join(" ")
+
+            // Get cleaned subject
+            subject = messageRes[0].parsedHeaders['subject'].replace(/([\[\(] *)?(RE|FWD|re|fwd|Re|Fwd?) *([-:;)\]][ :;\])-]*|$)|\]+ *$/, "")
+
+            // Add prefixes to subject
+            if (action == 'reply' || action == 'replyAll') {
+                subject = `Re:${subject}`
+            } else if (action == 'forward') {
+                subject = `Fwd:${subject}`
+            }
+        }
+        // Compose rfc2822 email
+        // refer: https://nodemailer.com/extras/mailcomposer
+        let composeOpts: any = {
+            from: from,
+            sender: from,
+            to: recipients.to.join(','),
+            cc: recipients.cc.join(','),
+            bcc: recipients.bcc.join(','),
+            replyTo: from,
+            subject: subject,
+            text: text
+        }
+
+        if (inReplyTo != "" && references != "") {
+            composeOpts['inReplyTo'] = inReplyTo
+            composeOpts['references'] = references
+        }
+
+        if (html != "") composeOpts['html'] = html;
+
+        let composeOptsAttachment: any[] = attachments.map((a: IAttachment) => {
+            return {
+                filename: a.filename,
+                encoding: 'base64',
+                content: f.services.attachmentService.getDownloadStream(a.fileId),
+                contentTransferEncoding: 'base64'
+            }
+        })
+
+        // Get mail size (without attachments)
+        let hasAttachments = false
+        let rfc822Mail: any = new MailComposer(composeOpts).compile()
+        let messageBuff: any
+        [err, messageBuff] = await to(rfc822Mail.build())
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
+        }
+        let mailSize = messageBuff.length
+
+        // If attachments add attachments
+        if (composeOptsAttachment.length != 0) {
+            hasAttachments = true
+            composeOpts['attachments'] = composeOptsAttachment;
+            rfc822Mail = new MailComposer(composeOpts).compile()
+        }
+
+        let parsed = _parseComiledMail(rfc822Mail)
+
+        // create the mail and save it
+        let newEmail: IMessage = {
+            rootId: null,
+            exp: mailboxResults[0].retention,
+            retentionDate: mailboxResults[0].retentionTime,
+            userRemoved: false,
+            idate: new Date(Date.now()),
+            size: mailSize,
+            parsedHeaders: parsed.parsedHeaders,
+            messageId: parsed.messageId,
+            draft: false,
+            copied: false,
+            attachments,
+            hasAttachments,
+            flags: {
+                seen: false,
+                starred: false,
+                important: false
+            },
+            body: parsed.parsedBody,
+            from: [from],
+            to: recipients.to,
+            cc: recipients.cc,
+            bcc: recipients.bcc,
+            rcpt: [],
+            mailbox: mailboxResults[0]._id,
+            user: user._id,
+            address: addressId,
+            uid: 0, // Temp
+            modseq: 0, // Temp
+            thread: <mongoose.Types.ObjectId>{}, // Temp
+            metadata: {}
+        }
+
+        let currentModifyIndex = mailboxResults[0].modifyIndex
+        let currentUid = mailboxResults[0].uidNext
+        let saveRes: any
+        [err, saveRes] = await to(f.tx.messageTx.saveEmail(newEmail, currentModifyIndex, currentUid))
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to save outbound mail ${err.message}`, INT_ERRORS.SERVER_ERR)
+        }
         // add to queue
-        // await cleanupTemp(tempFilePaths)
-
         res.send({})
+    }
+}
+
+// Helpers
+function _parseCompiledHeaders(headers: any, lowercase: boolean = false) {
+    let parsed: any = {}
+    headers.forEach((h: any) => {
+        if (lowercase) {
+            parsed[h.key.toLowerCase()] = h.value
+        } else {
+            parsed[h.key] = h.value
+        }
+    })
+
+    return parsed
+}
+
+function _parseBody(compiled: any) {
+
+    let mainHeader = _parseCompiledHeaders(compiled._headers)
+
+    let body = {
+        children: [],
+        isHTML: false,
+        contentType: {
+            value: mainHeader['Content-Type'],
+            params: {}
+        },
+        bodyEncoding: compiled.textEncoding,
+        bodyContent: compiled._isPlainText ? compiled.content : "",
+        headers: {
+            contentType: null,
+            contentDescription: null,
+            contentDisposition: null,
+            contentTransferEncoding: "",
+            contentId: "",
+            root: true
+        }
+    }
+
+    if (compiled._isPlainText && compiled.childNodes.length == 0) {
+        return body
+    } else {
+        let children = compiled.childNodes.map((n: any) => addChildren(n))
+        body.children = children
+        return body
+    }
+
+    function addChildren(compiledbody: any) {
+        let h = _parseCompiledHeaders(compiledbody._headers)
+        let isHTML = h['Content-Type'] == 'text/html'
+        let contentType = {
+            value: h['Content-Type'],
+            params: {}
+        }
+        let bodyEncoding = compiled.textEncoding
+        let bodyContent = compiled._isPlainText ? compiled.content : ""
+        let headers = {
+            contentType: h['Content-Type'] ? {
+                value: h['Content-Type'],
+                params: {}
+            } : null,
+            contentDescription: h['Content-Description'] ? {
+                value: h['Content-Type'],
+                params: {}
+            } : null,
+            contentDisposition: h['Content-Disposition'] ? {
+                value: h['Content-Type'],
+                params: {}
+            } : null,
+            contentTransferEncoding: "",
+            contentId: "",
+            root: false
+        }
+        let children = compiledbody.childNodes.map((n: any) => addChildren(n))
+        return {
+            isHTML,
+            contentType,
+            bodyEncoding,
+            bodyContent,
+            headers,
+            children
+        }
+    }
+}
+
+function _parseComiledMail(compiled: any) {
+    let parsedBody = _parseBody(compiled)
+    let parsedHeaders = _parseCompiledHeaders(compiled._headers, true)
+    let messageId = compiled.messageId()
+    return {
+        parsedBody,
+        parsedHeaders,
+        messageId
     }
 }
