@@ -8,6 +8,8 @@ import {
     getThreadedMessages,
     outboundMessage
 } from '../handlers/messageHandlers'
+import { authenticationHook, authorizationHook } from '../hooks/authHooks'
+
 
 export default async function (fastify: any, options: object) {
     fastify.route({
@@ -16,6 +18,8 @@ export default async function (fastify: any, options: object) {
         schema: getPaginatedMessagesSchema,
         // This will attach request validation errors to Fastify req object so that it can be handeled properly
         attachValidation: true,
+        preValidation: authenticationHook(fastify),
+        preHandler: authorizationHook(fastify),
         handler: getPaginatedMessages(fastify)
     })
 
@@ -24,6 +28,8 @@ export default async function (fastify: any, options: object) {
         url: '/get/thread/',
         schema: getThreadedMessagesSchema,
         attachValidation: true,
+        preValidation: authenticationHook(fastify),
+        preHandler: authorizationHook(fastify),
         handler: getThreadedMessages(fastify)
     })
 
@@ -32,6 +38,8 @@ export default async function (fastify: any, options: object) {
         url: '/outbound/',
         schema: outboundSchema,
         attachValidation: true,
+        preValidation: authenticationHook(fastify),
+        preHandler: authorizationHook(fastify),
         handler: outboundMessage(fastify)
     })
 

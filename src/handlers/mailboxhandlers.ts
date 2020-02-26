@@ -9,7 +9,7 @@ export function getAllForUser(fastify: any): any {
     return async (req: any, reply: any) => {
         let f: any = fastify
         // IMPORTANT! This is temp. Remove once auth is intigrated
-        let user: any = req.userObj
+        let user: any = req.user
 
         if (req.validationError) {
             // [{},{}]

@@ -3,7 +3,6 @@ import { ServerError, HTTP_STATUS, INT_ERRORS } from '../errors'
 import { PaginationOpts, FindQuery, AttachmentInfo } from '../types/types'
 import { to, validEmail } from '../utils'
 import { IMessage, IAttachment } from '../db/messages'
-import MimeNode from 'nodemailer/lib/mime-node'
 import MailComposer from 'nodemailer/lib/mail-composer'
 import fs from 'fs'
 import util from 'util'
@@ -16,7 +15,7 @@ export function getPaginatedMessages(fastify: any): any {
     return async (req: any, reply: any) => {
         let f: any = fastify
 
-        let user: any = req.userObj
+        let user: any = req.user
 
         if (req.validationError) {
             // [{},{}]
@@ -75,7 +74,7 @@ export function getThreadedMessages(fastify: any): any {
     return async (req: any, reply: any) => {
         let f: any = fastify
 
-        let user: any = req.userObj
+        let user: any = req.user
 
         if (req.validationError) {
             // [{},{}]
@@ -144,7 +143,7 @@ export function outboundMessage(fastify: any): any {
 
         }
 
-        let user: any = req.userObj
+        let user: any = req.user
         let validations: any = []
         let tempFilePaths: string[] = []
         let truncatedFileNames: string[] = []

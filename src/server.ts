@@ -97,25 +97,6 @@ server.register(mailboxRoutes, { prefix: '/api/v1/mailbox' })
 server.register(messageRoutes, { prefix: '/api/v1/message' })
 server.register(loginRoutes, { prefix: '/api/v1/' }) // login
 
-// IMPORTANT! This is temp, This has to be removed once auth handlers are intigrated
-// For now, pass the username explicity in a query param to all the requests
-server.addHook('onRequest', async (req: any, rep: any) => {
-    //@ts-ignore
-    let f = server.services.userService
-    let uname = req.query.user
-    try {
-        let q = {
-            filter: {
-                username: uname
-            }
-        }
-        let u = await f.findUsers({}, q)
-        req["userObj"] = u[0]
-    } catch (err) {
-        rep.status(500).send()
-    }
-})
-
 const startHTTPServer = async () => {
     try {
         let port: number = config.get("server.port")
