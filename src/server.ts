@@ -56,7 +56,7 @@ server.register(swagger, swaggerOption)
 
 // jwt
 server.register(fastifyJWT, {
-  secret: process.env.JWT_SECRET || 'secret_secret_secret',
+  secret: process.env.JWT_SECRET as string,
   trusted: validateToken // hook to allow blacklisting of tokens
 })
 

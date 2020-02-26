@@ -48,8 +48,8 @@ async function initDbDocs(fastify: any, { }, done: Function) {
 
     // create the super user if no user with role super user created
 		// TODO: add to config, make compulsory
-		let username = process.env["SUPERADMIN_USERNAME"] || "super_admin"
-		let password = process.env["SUPERADMIN_PASSWORD"] || "caef6db9da0aac1df0d8e247ccd3469ad77f90379e50c9574d215b7970118d1a"
+		let username = process.env.SUPERADMIN_USERNAME
+		let password = process.env.SUPERADMIN_PASSWORD
     let superAdmin:any
     [err, superAdmin] = await to(fastify.services.userService.createSuperAdminIfNotExist({}, username, password, fastify))
 		if(err != null) {

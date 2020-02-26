@@ -143,7 +143,7 @@ function createModels(conn: mongoose.Connection, modelData: ModelData[]): { [nam
     // Add indexes
     modelData.forEach(m => {
         m.indexes.forEach(index => {
-            m.schema.index(index.fields, index.options)
+            m.schema.index(index.fields, (index.options as any))
         });
     })
 
