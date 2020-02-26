@@ -2,7 +2,7 @@ import mongoose from "mongoose"
 import { to } from '../utils'
 import { HTTP_STATUS, ServerError, INT_ERRORS } from '../errors'
 import { IMessage, IMessageDoc } from '../db/messages'
-import { ServiceContext, PaginationOpts, PaginatedResponse, FindQuery } from '../types/types'
+import { ServiceContext, PaginationOpts, PaginatedResponse, FindQuery, UpdateQuery } from '../types/types'
 
 
 class MessageService {
@@ -52,6 +52,28 @@ class MessageService {
 
         return res
     }
+
+    async updateMessages(ctx: ServiceContext, queryInfo: UpdateQuery, options?: Object): Promise<Number> {
+        let dbCallOptions: any = {}
+        if (ctx.session) {
+            dbCallOptions.session = ctx.session
+        }
+
+        let res: any
+        let err: any
+
+        [err, res] = await to(this.Message.updateMany(queryInfo.filter, queryInfo.document, dbCallOptions).exec())
+
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
+        }
+
+        // res.n gives Number of documents matched
+        let modifiedCount = res.nModified
+
+        return modifiedCount
+    }
+
 
     async getPaginatedMessages(ctx: ServiceContext, opts: PaginationOpts): Promise<PaginatedResponse> {
 

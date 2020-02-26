@@ -214,4 +214,13 @@ export const outboundSchema = {
         },
         additionalProperties: false
     },
+    response: {
+        200: {
+            type: 'object',
+            properties: {
+                id: { type: 'string' }
+            }
+        }
+    }
+
 }

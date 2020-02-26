@@ -4,7 +4,7 @@ import path from 'path'
 // Using Mali instead of directly using node grpc package because it does not support promises
 import Mali from 'mali'
 import { to } from '../utils'
-import { AttachmentInfo, FindQuery } from '../types/types'
+import { AttachmentInfo, FindQuery, UpdateQuery } from '../types/types'
 import { Transform } from 'stream'
 import { IMessage, IAttachment } from '../db/messages'
 
@@ -19,11 +19,13 @@ async function setupGrpcServer(fastify: any, { }, done: Function) {
     const checkValidityhandler = checkValidity(fastify)
     const uploadAttachmentHandler = uploadAttachment(fastify)
     const saveInboundHandler = saveInbound(fastify)
+    const updateSavedMessageHandler = updateSavedMessage(fastify)
     // Setup server
     app.use({
         checkValidity: checkValidityhandler,
         uploadAttachment: uploadAttachmentHandler,
-        saveInbound: saveInboundHandler
+        saveInbound: saveInboundHandler,
+        updateSavedMessage: updateSavedMessageHandler
     })
 
     // Decorate fastify instance
@@ -46,7 +48,6 @@ function checkValidity(fastify: any) {
         [err, addressResult] = await to(f.services.addressService.checkAvailibility({}, address))
 
         if (err != null) {
-            // TODO: Log here
             fastify.log.error(`[Grpc/MailService/checkValidity] Error validating address`, err)
             throw new Error('[Grpc/MailService/checkValidity] Error validating address')
         }
@@ -248,6 +249,48 @@ function saveInbound(fastify: any) {
                 throw new Error(`[Grpc/MailService/saveInbound] Unable to save email`)
             }
         }
+        ctx.res = {} // Empty
+    }
+}
+
+function updateSavedMessage(fastify: any) {
+    return async function updateSavedMessageHandler(ctx: any) {
+        let f: any = fastify
+        let messageId: string = ctx.request.req.messageId
+        let message: string = ctx.request.req.message
+        let stage: string = ctx.request.req.stage
+        fastify.log.info(`[Grpc/MailService/updateSavedMessage] Called: ${stage}, ${message} for ${messageId}`)
+        let newMetadataEntry: any = {
+            stage,
+            message,
+            at: new Date(Date.now())
+        }
+
+        let updateMessageQuery: UpdateQuery = {
+            filter: {
+                messageId: messageId
+            },
+            // Add more structure when requirements are more clear
+            document: {
+                $push: { 'metadata.outboundStatus': newMetadataEntry }
+            }
+        }
+
+        let err: any
+        let updatedCount: any
+        // TODO: Add more checks here...
+        [err, updatedCount] = await to(f.services.messageService.updateMessages({}, updateMessageQuery))
+
+        if (err != null) {
+            fastify.log.error(`[Grpc/MailService/updateSavedMessage] Error updating message status`, err)
+            throw new Error('[Grpc/MailService/updateSavedMessage] Error updating message status')
+        }
+
+        if (updatedCount == 0) {
+            fastify.log.error(`[Grpc/MailService/updateSavedMessage] Error updating message status`, new Error())
+            throw new Error('[Grpc/MailService/updateSavedMessage] Error updating message status')
+        }
+
         ctx.res = {} // Empty
     }
 }

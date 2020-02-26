@@ -44,63 +44,72 @@ exports.hook_mail = function (next, connection, params) {
 
 exports.hook_data = function (next, connection) {
     let plugin = this
-    connection.transaction.parse_body = true;
+    if (connection.relaying) {
+        next()
+    } else {
+        connection.transaction.parse_body = true;
 
-    connection.transaction.notes.attachment = {
-        todo_count: 0,
-        attachments: []
+        connection.transaction.notes.attachment = {
+            todo_count: 0,
+            attachments: []
+        }
+
+        connection.transaction.attachment_hooks(
+            function (ct, fn, body, stream) {
+                start_att(connection, ct, fn, body, stream, plugin.grpcClient)
+            }
+        );
+        next();
     }
 
-    connection.transaction.attachment_hooks(
-        function (ct, fn, body, stream) {
-            start_att(connection, ct, fn, body, stream, plugin.grpcClient)
-        }
-    );
-    next();
 }
 
 exports.hook_data_post = function (next, connection) {
-    if (connection.transaction.notes.attachment.todo_count > 0) {
-        // still have attachment hooks running, so wait for it to complete
-        connection.transaction.notes.attachment.next = next;
-    }
-    else {
-        next();
+    if (connection.relaying) {
+        next()
+    } else {
+        if (connection.transaction.notes.attachment.todo_count > 0) {
+            // still have attachment hooks running, so wait for it to complete
+            connection.transaction.notes.attachment.next = next;
+        }
+        else {
+            next();
+        }
     }
 }
 
 exports.hook_rcpt = function (next, connection, params) {
     // Outbound
     if (connection.relaying) {
-        next()
+        next(OK)
+    } else {
+        let rcpt = params[0];
+        const tnx = connection.transaction;
+
+        let { addresses } = tnx.notes.targets
+
+        // Using * is not allowed in addresses
+        if (/\*/.test(rcpt.user)) {
+            next(DENYSOFT, "No such User");
+        }
+
+        // Check if address is valid
+        let address = `${rcpt.user}@${rcpt.host}`
+        // TODO: Add logging
+        ps(this.grpcClient, this.grpcClient.checkValidity, { address: address })
+            .then(resp => {
+                if (resp.valid) {
+                    addresses.add(address)
+                    next(OK, "Rcpt successful")
+                } else {
+                    next(DENY, "No Such User")
+                }
+            })
+            .catch(e => {
+                connection.logerror(`Error validating address: ${e.toString()}`)
+                next(DENY, `Error processing the email with address ${address}`)
+            })
     }
-
-    let rcpt = params[0];
-    const tnx = connection.transaction;
-
-    let { addresses } = tnx.notes.targets
-
-    // Using * is not allowed in addresses
-    if (/\*/.test(rcpt.user)) {
-        next(DENYSOFT, "No such User");
-    }
-
-    // Check if address is valid
-    let address = `${rcpt.user}@${rcpt.host}`
-    // TODO: Add logging
-    ps(this.grpcClient, this.grpcClient.checkValidity, { address: address })
-        .then(resp => {
-            if (resp.valid) {
-                addresses.add(address)
-                next(OK, "Rcpt successful")
-            } else {
-                next(DENY, "No Such User")
-            }
-        })
-        .catch(e => {
-            connection.logerror(`Error validating address: ${e.toString()}`)
-            next(DENY, `Error processing the email with address ${address}`)
-        })
 }
 
 exports.hook_rcpt_ok = function (next, connection, params) {
@@ -108,6 +117,7 @@ exports.hook_rcpt_ok = function (next, connection, params) {
 }
 
 exports.hook_queue = function (next, connection, params) {
+
     const txn = connection.transaction
     const body = txn.body
     const header = txn.header

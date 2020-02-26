@@ -74,6 +74,12 @@ message NewEmail {
   repeated Rcpt rcptTo = 10;
 }
 
+message UpdateInfo {
+  string messageId = 1;
+  string stage = 2;
+  string message = 3;
+}
+
 message Empty { }
 
 service MailService {
@@ -83,4 +89,6 @@ service MailService {
   rpc UploadAttachment(stream Chunk) returns (UploadedFileId) {}
 
   rpc SaveInbound(NewEmail) returns (Empty) {}
+
+  rpc UpdateSavedMessage(UpdateInfo) returns (Empty) {}
 }

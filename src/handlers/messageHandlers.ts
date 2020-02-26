@@ -7,6 +7,7 @@ import MimeNode from 'nodemailer/lib/mime-node'
 import MailComposer from 'nodemailer/lib/mail-composer'
 import fs from 'fs'
 import util from 'util'
+import { smtpTransport } from '../smtpSender'
 const unlinkAsync = util.promisify(fs.unlink)
 // In all handlers `this` is the fastify instance
 // The fastify instance used for the handler registration
@@ -128,7 +129,7 @@ export function getThreadedMessages(fastify: any): any {
 }
 
 export function outboundMessage(fastify: any): any {
-    return async (req: any, res: any) => {
+    return async (req: any, reply: any) => {
         let f: any = fastify
 
         let cleanupTemp = async (fileNames: string[]) => {
@@ -143,6 +144,8 @@ export function outboundMessage(fastify: any): any {
 
         }
 
+        let user: any = req.userObj
+        let validations: any = []
         let tempFilePaths: string[] = []
         let truncatedFileNames: string[] = []
         let files: any[] = []
@@ -157,6 +160,7 @@ export function outboundMessage(fastify: any): any {
         let subject: string = req.body.subject || "" // If action is reply/fwd then this subject is ignored and subject is taken from parent message
         let text = req.body.text || ""
         let html = req.body.html || ""
+        let attachments: IAttachment[] = []
 
         // Check if any files were larger than the allowed size
         if (req.body.files) {
@@ -185,9 +189,6 @@ export function outboundMessage(fastify: any): any {
                 }
             }
         }
-
-        let user: any = req.userObj
-        let validations: any = []
 
         if (req.validationError) {
             validations = req.validationError.validation
@@ -241,9 +242,7 @@ export function outboundMessage(fastify: any): any {
                 INT_ERRORS.API_VALIDATION_ERR
             )
         }
-        console.log(req.body, 'req.body')
 
-        let attachments: IAttachment[] = []
         // upload files to gridfs and create attachment objects
         for (let i in files) {
             let info: AttachmentInfo = {
@@ -277,7 +276,8 @@ export function outboundMessage(fastify: any): any {
         // All files uploaded to gridfs , now cleanup the temp files
         await cleanupTemp(tempFilePaths)
 
-        // thread and save message to sent mailbox
+        // Thread and save message to sent mailbox
+
         // Get address
         let addressId: mongoose.Types.ObjectId = user.primeAddress
         if (req.body.addressId) {
@@ -359,6 +359,7 @@ export function outboundMessage(fastify: any): any {
                 subject = `Fwd:${subject}`
             }
         }
+
         // Compose rfc2822 email
         // refer: https://nodemailer.com/extras/mailcomposer
         let composeOpts: any = {
@@ -398,7 +399,7 @@ export function outboundMessage(fastify: any): any {
         }
         let mailSize = messageBuff.length
 
-        // If attachments add attachments
+        // If attachments add attachments and get a new rfc822 email
         if (composeOptsAttachment.length != 0) {
             hasAttachments = true
             composeOpts['attachments'] = composeOptsAttachment;
@@ -406,6 +407,9 @@ export function outboundMessage(fastify: any): any {
         }
 
         let parsed = _parseComiledMail(rfc822Mail)
+
+        // update the message-id that was generated
+        composeOpts['messageId'] = parsed.messageId;
 
         // create the mail and save it
         let newEmail: IMessage = {
@@ -449,11 +453,18 @@ export function outboundMessage(fastify: any): any {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to save outbound mail ${err.message}`, INT_ERRORS.SERVER_ERR)
         }
         // add to queue
-        res.send({})
+        let sendRes: any
+        [err, sendRes] = await to(smtpTransport.sendMail(composeOpts))
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to queue message outbound mail ${err}`, INT_ERRORS.SERVER_ERR)
+        }
+        reply
+            .status(HTTP_STATUS.OK)
+            .message({ id: saveRes.toString() })
     }
 }
 
-// Helpers
+// Outbound handler helpers 
 function _parseCompiledHeaders(headers: any, lowercase: boolean = false) {
     let parsed: any = {}
     headers.forEach((h: any) => {

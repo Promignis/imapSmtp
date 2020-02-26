@@ -13,7 +13,8 @@ if (!validConf.valid) {
     process.exit(1)
 }
 
-const MUST_HAVE_ENV = ["DOMAIN", "JWT_SECRET", "SUPERADMIN_USERNAME", "SUPERADMIN_PASSWORD", "NODE_ENV"]
+const MUST_HAVE_ENV = ["DOMAIN", "JWT_SECRET", "SUPERADMIN_USERNAME", "SUPERADMIN_PASSWORD", "NODE_ENV", "SMTP_USER", "SMTP_PASSWORD"]
+
 let missingEnv = false
 
 MUST_HAVE_ENV.forEach(env => {
