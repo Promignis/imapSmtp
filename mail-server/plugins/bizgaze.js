@@ -262,7 +262,7 @@ const extBody = (body) => {
 
         let bodyEncoding = body.body_encoding
 
-        let bodyText = body.bodytext
+        let bodyContent = body.bodytext
 
         let children = body.children.map((body) => extract(body, true))
 
@@ -271,7 +271,7 @@ const extBody = (body) => {
             isHTML,
             contentType,
             bodyEncoding,
-            bodyText,
+            bodyContent,
             children
         }
     }

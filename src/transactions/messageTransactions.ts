@@ -127,7 +127,9 @@ export class MessageTX {
                 refsArray.push(irt)
             }
 
-            newReferenceArray.concat(refsArray)
+            refsArray.forEach(function (ref: string) {
+                newReferenceArray.push(ref)
+            })
 
             // Try to find an existing thread that might have these references
             let threadfilter: FindQuery = {
