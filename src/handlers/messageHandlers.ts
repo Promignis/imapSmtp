@@ -459,7 +459,7 @@ export function outboundMessage(fastify: any): any {
         }
         reply
             .status(HTTP_STATUS.OK)
-            .message({ id: saveRes.toString() })
+            .send({ id: saveRes.toString() })
     }
 }
 

@@ -25,6 +25,13 @@ export const userCreateSchema = {
             },
             additionalProperties: false
         }
+    },
+    headers: {
+        type: 'object',
+        properties: {
+            'Authorization': { type: 'string', isNotEmpty: true }
+        },
+        required: ['Authorization']
     }
 }
 
@@ -59,6 +66,13 @@ export const getAllMailboxSchema = {
             },
             additionalProperties: false
         }
+    },
+    headers: {
+        type: 'object',
+        properties: {
+            'Authorization': { type: 'string', isNotEmpty: true }
+        },
+        required: ['Authorization']
     }
 }
 
@@ -130,6 +144,13 @@ export const getPaginatedMessagesSchema = {
             },
             additionalProperties: false
         }
+    },
+    headers: {
+        type: 'object',
+        properties: {
+            'Authorization': { type: 'string', isNotEmpty: true }
+        },
+        required: ['Authorization']
     }
 }
 
@@ -171,6 +192,13 @@ export const getThreadedMessagesSchema = {
                 }
             }
         }
+    },
+    headers: {
+        type: 'object',
+        properties: {
+            'Authorization': { type: 'string', isNotEmpty: true }
+        },
+        required: ['Authorization']
     }
 }
 
@@ -221,6 +249,13 @@ export const outboundSchema = {
                 id: { type: 'string' }
             }
         }
+    },
+    headers: {
+        type: 'object',
+        properties: {
+            'Authorization': { type: 'string', isNotEmpty: true }
+        },
+        required: ['Authorization']
     }
 
 }

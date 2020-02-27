@@ -48,9 +48,10 @@ const swaggerOption = {
         },
         host: 'localhost',
         schemes: ['http', 'https'],
-        consumes: ['application/json'],
-        produces: ['application/json']
-    }
+        consumes: ['application/json', 'multipart/form-data'],
+        produces: ['application/json'],
+    },
+    exposeRoute: true
 }
 
 // Registration order matters
@@ -101,6 +102,7 @@ const startHTTPServer = async () => {
     try {
         let port: number = config.get("server.port")
         await server.listen(port, "127.0.0.1");
+        server.swagger()
     } catch (e) {
         server.log.error("Could not serve: ", e)
         process.exit(1)
