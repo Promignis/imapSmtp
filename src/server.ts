@@ -101,7 +101,7 @@ server.register(loginRoutes, { prefix: '/api/v1/' }) // login
 const startHTTPServer = async () => {
     try {
         let port: number = config.get("server.port")
-        await server.listen(port, "127.0.0.1");
+        await server.listen(port, "0.0.0.0");
         server.swagger()
     } catch (e) {
         server.log.error("Could not serve: ", e)

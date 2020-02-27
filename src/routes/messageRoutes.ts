@@ -19,7 +19,7 @@ export default async function (fastify: any, options: object) {
         // This will attach request validation errors to Fastify req object so that it can be handeled properly
         attachValidation: true,
         preValidation: authenticationHook(fastify),
-        preHandler: authorizationHook(fastify),
+        // preHandler: authorizationHook(fastify),
         handler: getPaginatedMessages(fastify)
     })
 
@@ -29,7 +29,7 @@ export default async function (fastify: any, options: object) {
         schema: getThreadedMessagesSchema,
         attachValidation: true,
         preValidation: authenticationHook(fastify),
-        preHandler: authorizationHook(fastify),
+        // preHandler: authorizationHook(fastify),
         handler: getThreadedMessages(fastify)
     })
 
@@ -39,7 +39,7 @@ export default async function (fastify: any, options: object) {
         schema: outboundSchema,
         attachValidation: true,
         preValidation: authenticationHook(fastify),
-        preHandler: authorizationHook(fastify),
+        // preHandler: authorizationHook(fastify),
         handler: outboundMessage(fastify)
     })
 

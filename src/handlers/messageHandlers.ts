@@ -110,7 +110,7 @@ export function getThreadedMessages(fastify: any): any {
         let res: any
 
         // TODO: Maybe some message threads are really big, with over 100 messages. In that case we should have
-        // count get the thread , count the references array and figure out the size first. If too big, say >100 
+        // count get the thread , count the references array and figure out the size first. If too big, say >100
         // then paginate instead of find
 
         [err, res] = await to(fastify.services.messageService.findMessages({}, messageQuery))
@@ -165,7 +165,7 @@ export function outboundMessage(fastify: any): any {
         if (req.body.files) {
             /**
              * File Object is of shape
-             * 
+             *
              * name: 'test1mb.txt',
              * data: <Buffer >,
              * size: 1242880,
@@ -463,7 +463,7 @@ export function outboundMessage(fastify: any): any {
     }
 }
 
-// Outbound handler helpers 
+// Outbound handler helpers
 function _parseCompiledHeaders(headers: any, lowercase: boolean = false) {
     let parsed: any = {}
     headers.forEach((h: any) => {

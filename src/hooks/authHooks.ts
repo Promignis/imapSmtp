@@ -43,6 +43,7 @@ export function authenticationHook(fastify: any) {
 export function authorizationHook(fastify: any) {
   // TODO: get this from config and use same for routes
   const USER_CREATE: string = "/api/v1/user/create/"
+  const OUTBOUND: string = "/api/v1/message/outbound"
 
   // so far resource are
   // implicit based on api
@@ -54,11 +55,19 @@ export function authorizationHook(fastify: any) {
 
   // permissions needed for user role to
   // create a user
+  permissionMap[OUTBOUND] = {}
+  permissionMap[OUTBOUND][ROLES.USER] = []
+  permissionMap[OUTBOUND][ROLES.ADMIN] = []
+
   permissionMap[USER_CREATE] = {}
   permissionMap[USER_CREATE][ROLES.USER] = [PRIVILEGES.CREATE]
   permissionMap[USER_CREATE][ROLES.ADMIN] = [PRIVILEGES.CREATE]
 
   // resources needed for that url
+  resourceMap[OUTBOUND] = {}
+  resourceMap[OUTBOUND][ROLES.USER] = []
+  resourceMap[OUTBOUND][ROLES.ADMIN] = []
+
   resourceMap[USER_CREATE] = {}
   resourceMap[USER_CREATE][ROLES.USER] = [RESOURCES.USER]
   resourceMap[USER_CREATE][ROLES.ADMIN] = [RESOURCES.USER]
