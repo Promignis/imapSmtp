@@ -94,6 +94,9 @@ class UserService {
           let resp: any
 
           [err, resp] = await to(fastify.tx.userTx.createNewUser(username, options))
+          if(err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.Name || INT_ERRORS.SERVER_ERR)
+          }
 					return resp
         }
         return existingUser
