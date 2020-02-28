@@ -50,11 +50,13 @@ export function authorizationHook(fastify: any) {
   const permissionMap: any = {
   }
   const resourceMap: any = {
-
   }
 
+  // TODO: make helper functions/better ux to do this
+  //
   // permissions needed for user role to
   // create a user
+
   permissionMap[OUTBOUND] = {}
   permissionMap[OUTBOUND][ROLES.USER] = []
   permissionMap[OUTBOUND][ROLES.ADMIN] = []
@@ -62,15 +64,19 @@ export function authorizationHook(fastify: any) {
   permissionMap[USER_CREATE] = {}
   permissionMap[USER_CREATE][ROLES.USER] = [PRIVILEGES.CREATE]
   permissionMap[USER_CREATE][ROLES.ADMIN] = [PRIVILEGES.CREATE]
+  permissionMap[USER_CREATE][ROLES.SUPER_ADMIN] = [PRIVILEGES.CREATE]
 
   // resources needed for that url
   resourceMap[OUTBOUND] = {}
   resourceMap[OUTBOUND][ROLES.USER] = []
   resourceMap[OUTBOUND][ROLES.ADMIN] = []
+  resourceMap[OUTBOUND][ROLES.SUPER_ADMIN] = []
 
   resourceMap[USER_CREATE] = {}
   resourceMap[USER_CREATE][ROLES.USER] = [RESOURCES.USER]
   resourceMap[USER_CREATE][ROLES.ADMIN] = [RESOURCES.USER]
+  resourceMap[USER_CREATE][ROLES.SUPER_ADMIN] = [RESOURCES.USER]
+
   return async (request: fastify.FastifyRequest, reply: fastify.FastifyReply<ServerResponse>) => {
     const url: string | undefined = request.raw.url
     // url not sent
@@ -90,6 +96,11 @@ export function authorizationHook(fastify: any) {
 
     // TODO: handle case of fetching new access for user
     if(!userAccess) {
+          throw new ServerError(
+            HTTP_STATUS.INTERNAL_SERVER_ERROR,
+            "Internal error",
+            INT_ERRORS.SERVER_ERR
+          )
     }
 
     if (permissionMap[url] != null && resourceMap[url] != null) {

@@ -156,7 +156,7 @@ exports.hook_queue = function (next, connection, params) {
         // takes the value: 'name <address@a.com>, name2 <address2@a.com>'
         // and converts it to
         // [{name: name, address: address@a.com},{name: name2, address: address2@a.com}]
-        // Note: Bcc header is mostly never present. 
+        // Note: Bcc header is mostly never present.
         if (['from', 'to', 'cc', 'bcc'].includes(key)) {
             info[key] = addrparser.parse(headerTuples[key]).map(adr => {
                 return adr.address
@@ -191,7 +191,8 @@ exports.hook_queue = function (next, connection, params) {
         to: info.to,
         cc: info.cc || [],
         bcc: info.bcc || [],
-        rcptTo: rcptTo
+        rcptTo: rcptTo,
+        meta: {}
     }
 
     // Call grpc
@@ -350,7 +351,7 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     } else {
         // Create a new name
         let name = uuidv4()
-        // Guess the extension by content type or defaults to bin 
+        // Guess the extension by content type or defaults to bin
         let extension = mime.extension(contentType.value)
         fileName = `${name}.${extension}`
     }

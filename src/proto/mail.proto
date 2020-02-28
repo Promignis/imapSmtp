@@ -6,7 +6,7 @@ message ValidityReq {
 
 // This is pretty limited for now
 // in future more checks will be made like quta and rate limit settings etc
-// For now just return a boolean 
+// For now just return a boolean
 message ValidityRes {
   bool valid = 1;
 }
@@ -72,6 +72,7 @@ message NewEmail {
   repeated string cc = 8;
   repeated string bcc = 9;
   repeated Rcpt rcptTo = 10;
+  map<string, string> meta = 11;
 }
 
 message UpdateInfo {
