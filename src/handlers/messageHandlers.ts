@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { ServerError, HTTP_STATUS, INT_ERRORS } from '../errors'
-import { PaginationOpts, FindQuery, AttachmentInfo } from '../types/types'
+import { PaginationOpts, FindQuery, AttachmentInfo, UpdateQuery } from '../types/types'
 import { to, validEmail } from '../utils'
 import { IMessage, IAttachment } from '../db/messages'
 import MailComposer from 'nodemailer/lib/mail-composer'
@@ -452,14 +452,47 @@ export function outboundMessage(fastify: any): any {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to save outbound mail ${err.message}`, INT_ERRORS.SERVER_ERR)
         }
         // add to queue
+        let replyStatus = "queued successfully"
         let sendRes: any
         [err, sendRes] = await to(smtpTransport.sendMail(composeOpts))
         if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to queue message outbound mail ${err}`, INT_ERRORS.SERVER_ERR)
+            f.log.error("Unable to queue message outbound mail", new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to queue message outbound mail ${err}`, INT_ERRORS.SERVER_ERR))
+
+            replyStatus = "failed to queue"
+
+            // Update the message document
+            let newMetadataEntry: any = {
+                stage: 'queue',
+                message: `failed: ${err.message}`,
+                at: new Date(Date.now())
+            }
+
+            let updateMessageQuery: UpdateQuery = {
+                filter: {
+                    _id: saveRes,
+                    user: user._id
+                },
+                // Add more structure when requirements are more clear
+                document: {
+                    $push: { 'metadata.outboundStatus': newMetadataEntry }
+                }
+            }
+
+            let updatedCount: any
+            [err, updatedCount] = await to(f.services.messageService.updateMessages({}, updateMessageQuery))
+
+            if (err != null) {
+                throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, INT_ERRORS.SERVER_ERR)
+            }
+
         }
+
         reply
             .status(HTTP_STATUS.OK)
-            .send({ id: saveRes.toString() })
+            .send({
+                id: saveRes.toString(),
+                status: replyStatus
+            })
     }
 }
 

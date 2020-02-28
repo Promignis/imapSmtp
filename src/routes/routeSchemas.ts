@@ -246,7 +246,8 @@ export const outboundSchema = {
         200: {
             type: 'object',
             properties: {
-                id: { type: 'string' }
+                id: { type: 'string' },
+                status: { type: 'string' }
             }
         }
     },
