@@ -2,6 +2,7 @@ const grpc = require('grpc')
 const protoLoader = require('@grpc/proto-loader')
 const ps = require('promisify-call')
 const path = require('path')
+const fs = require('fs')
 
 exports.setupProtoClient = function (server, next) {
     const plugin = this;
@@ -9,7 +10,12 @@ exports.setupProtoClient = function (server, next) {
     const definition = grpc.loadPackageDefinition(proto);
     const mailService = definition.MailService
     // TODO: move the connection host and port data to config and remove hardcoding
-    plugin.grpcClient = new mailService("0.0.0.0:50051", grpc.credentials.createInsecure())
+    let cred = grpc.credentials.createSsl(
+        fs.readFileSync(path.join(process.cwd(), "../", "grpc_root_cert", "bizgaze.root.crt")),
+        fs.readFileSync(path.join(process.cwd(), "../", "grpc_root_cert", "client.key")),
+        fs.readFileSync(path.join(process.cwd(), "../", "grpc_root_cert", "client.crt")),
+    )
+    plugin.grpcClient = new mailService("localhost:50051", cred)
     next()
 }
 
@@ -37,8 +43,6 @@ exports.load_lmtp_ini = function () {
 
 exports.hook_queue_outbound = function (next, connection) {
     let txn = connection.transaction
-    connection.loginfo('inside hook_queue_outbound ====================1')
-
     let sender = txn.header.headers['sender'][0].trim()
     let messageId = txn.header.headers['message-id'][0].trim()
     txn.notes['messageId'] = messageId
@@ -62,8 +66,6 @@ exports.hook_send_email = function (next, hmail) {
 }
 
 exports.hook_deferred = function (next, hmail, info) {
-    this.loginfo('inside hook_deferred ====================3')
-
     let rcpt = hmail.todo.rcpt_to
     /**
      * Has the following shape in case errors happen
@@ -71,10 +73,10 @@ exports.hook_deferred = function (next, hmail, info) {
      * original_host : "bizgaze.co"
      * host : "bizgaze.co"
      * user : "abc"
-     * reason : "450 Error ----- Error"
+     * reason : "450 Error "
      * dsn_action : "delayed"
      * dsn_smtp_code : "450"
-     * dsn_smtp_response : "Error ----- Error"
+     * dsn_smtp_response : "Error"
      * dsn_remote_mta : "127.0.0.1"
      */
 

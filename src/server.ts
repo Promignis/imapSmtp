@@ -1,4 +1,7 @@
 import fastify from "fastify"
+import fs from 'fs'
+import path from 'path'
+import grpc from 'grpc'
 import { Server, IncomingMessage, ServerResponse } from "http"
 import config from './config'
 import logger from './logger'
@@ -115,7 +118,18 @@ export const startGrpcServer = async () => {
     let grpcApp = fastify.grpcApp
 
     try {
-        let status: any = grpcApp.start('0.0.0.0:50051')
+        grpc.credentials.createSsl
+        let cred = grpc.ServerCredentials.createSsl(
+            fs.readFileSync(path.join(process.cwd(), "grpc_root_cert", "bizgaze.root.crt")),
+            [
+                {
+                    private_key: fs.readFileSync(path.join(process.cwd(), "grpc_root_cert", "server.key")),
+                    cert_chain: fs.readFileSync(path.join(process.cwd(), "grpc_root_cert", "server.crt")),
+                }
+            ],
+            true,
+        )
+        let status: any = grpcApp.start('0.0.0.0:50051', cred)
         if (status.started) {
             server.log.info(`Grpc Server listening on 0.0.0.0:50051`)
         } else {

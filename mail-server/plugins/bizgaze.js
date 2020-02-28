@@ -1,6 +1,7 @@
 const grpc = require('grpc')
 const protoLoader = require('@grpc/proto-loader')
 const path = require('path')
+const fs = require('fs')
 const ps = require('promisify-call')
 const pcli = require('grpc-promise')
 var libmime = require('libmime');
@@ -14,7 +15,12 @@ exports.setupProtoClient = function (server, next) {
     const definition = grpc.loadPackageDefinition(proto);
     const mailService = definition.MailService
     // TODO: move the connection host and port data to config and remove hardcoding
-    plugin.grpcClient = new mailService("0.0.0.0:50051", grpc.credentials.createInsecure())
+    let cred = grpc.credentials.createSsl(
+        fs.readFileSync(path.join(process.cwd(), "../", "grpc_root_cert", "bizgaze.root.crt")),
+        fs.readFileSync(path.join(process.cwd(), "../", "grpc_root_cert", "client.key")),
+        fs.readFileSync(path.join(process.cwd(), "../", "grpc_root_cert", "client.crt")),
+    )
+    plugin.grpcClient = new mailService("localhost:50051", cred)
     next()
 }
 
