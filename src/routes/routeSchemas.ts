@@ -3,7 +3,7 @@ import { ROLES } from '../services/roleService'
 export const userCreateSchema = {
     body: {
         type: 'object',
-        required: ['username', 'tempPassword', 'firstname', 'lastname', 'role'],
+        required: ['username', 'tempPassword', 'firstName', 'lastName', 'role'],
         properties: {
             username: { type: 'string', minLength: 4 },
             tempPassword: { type: 'string', minLength: 8 },
