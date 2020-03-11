@@ -2,10 +2,14 @@ import * as fs from 'fs'
 import { createLogger, transports, format } from 'winston'
 import config from './config'
 import "winston-daily-rotate-file"
+import { logMessage } from './imapv4/types'
 
 
 let fileName = <string>config.get("logger.logFile")
 let filePath = <string>config.get("logger.logDirectory")
+
+let imapLogsFileName = <string>config.get("imap.logger.logFile")
+let imapLogsFilePath = <string>config.get("imap.logger.logDirectory")
 
 // Winston does not create directories
 if (!fs.existsSync(filePath)) {
@@ -46,8 +50,33 @@ let loggerOptions = {
     }
 }
 
+let imapServerLoggerOptions = {
+    file: {
+        level: 'info',
+        filename: imapLogsFileName,
+        dirname: imapLogsFilePath,
+        format: fileFormtat
+    },
+    console: {
+        level: 'silly',
+        format: consoleFormat
+    },
+    rotateFile: {
+        level: 'info',
+        filename: `%DATE%_${imapLogsFileName}`,
+        dirname: imapLogsFilePath,
+        format: fileFormtat,
+        datePattern: <string>config.get("imap.logger.dateFormat"),
+        maxSize: <number>config.get("imap.logger.maxLogFilesNumber"),
+        frequency: <string>config.get("imap.logger.rotationFrequency")
+    }
+}
+
 const consoleTransport = new transports.Console(loggerOptions.console)
 const rotatingFileTransport = new transports.DailyRotateFile(loggerOptions.rotateFile)
+
+const imapLoggerConsoleTransport = new transports.Console(imapServerLoggerOptions.console)
+const imapLoggerRotatingFileTransport = new transports.DailyRotateFile(imapServerLoggerOptions.rotateFile)
 
 
 let logger = createLogger(
@@ -58,9 +87,18 @@ let logger = createLogger(
     }
 )
 
+let imapServerLogger = createLogger(
+    {
+        transports: [
+            imapLoggerRotatingFileTransport,
+        ]
+    }
+)
+
 if (process.env.NODE_ENV !== 'production') {
     // Will add console logging only in development enviornment
     logger.add(consoleTransport)
+    imapServerLogger.add(imapLoggerConsoleTransport)
 }
 
 // Refer: https://github.com/fastify/fastify/blob/master/docs/Logging.md
@@ -163,4 +201,42 @@ class FastifyCompliantLogger {
     }
 }
 
-export default new FastifyCompliantLogger(logger)
+class IMAPServerLogger {
+    logger: any
+    constructor(logger: any) {
+        this.logger = logger;
+    }
+
+    info(msg: logMessage) {
+        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        this.logger.info(message)
+    }
+
+    warn(msg: logMessage) {
+        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        this.logger.warn(message)
+    }
+
+    error(msg: logMessage, error: Error | undefined = undefined) {
+        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        if (!(error instanceof Error)) error = undefined
+        if (error == undefined) {
+            this.logger.error(message)
+        } else {
+            this.logger.error(message, error)
+        }
+    }
+
+    log(msg: logMessage) {
+        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        this.logger.warn(message)
+    }
+
+    debug(msg: logMessage) {
+        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        this.logger.warn(message)
+    }
+}
+
+export const httpLogger = new FastifyCompliantLogger(logger)
+export const imapLogger = new IMAPServerLogger(imapServerLogger)

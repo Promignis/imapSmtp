@@ -4,7 +4,7 @@ import path from 'path'
 import grpc from 'grpc'
 import { Server, IncomingMessage, ServerResponse } from "http"
 import config from './config'
-import logger from './logger'
+import { httpLogger } from './logger'
 import swagger from 'fastify-swagger'
 import { mongoosePlugin } from './db/connection'
 import { servicesPlugin } from './services/servicePlugin'
@@ -23,7 +23,7 @@ import { fileHandlerPlugin } from './fileHandlerPlugin'
 // If using http2 we'd pass <http2.Http2Server, http2.Http2ServerRequest, http2.Http2ServerResponse>
 const server: fastify.FastifyInstance<Server, IncomingMessage, ServerResponse> = fastify({
     // Instead of using Fastify default logger use our custom logger internally
-    logger: logger,
+    logger: httpLogger,
     pluginTimeout: 60000,
     ajv: {
         plugins: [

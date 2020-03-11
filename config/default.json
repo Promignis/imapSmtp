@@ -30,5 +30,17 @@
     },
     "redis": {
         "url": ""
+    },
+    "imap": {
+        "logger": {
+            "logDirectory": "/home/logs/bizgaze/",
+            "logFile": "imapServer.log",
+            "rotationFrequency": "24h",
+            "maxLogFilesNumber": null,
+            "dateFormat": "YYYY-MM-DD-HH"
+        },
+        "server": {
+            "port": 993
+        }
     }
 }

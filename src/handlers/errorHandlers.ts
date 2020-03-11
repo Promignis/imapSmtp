@@ -1,5 +1,5 @@
 import { HTTP_STATUS, ServerError, INT_ERRORS } from '../errors'
-import logger from '../logger'
+import { httpLogger as logger } from '../logger'
 
 interface ErrorMessage {
     status: number,

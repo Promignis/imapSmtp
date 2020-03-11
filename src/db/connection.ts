@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import config from '../config'
-import logger from '../logger'
+import { httpLogger as logger } from '../logger'
 import {
     ModelData,
     DB
