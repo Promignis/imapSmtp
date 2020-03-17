@@ -1,4 +1,4 @@
-import logger from './logger'
+import { httpLogger as logger } from './logger'
 import startHTTP, { startGrpcServer } from './server'
 
 export default async function start() {
