@@ -134,6 +134,9 @@ export const getPaginatedMessagesSchema = {
                             parsedHeaders: { type: 'object', additionalProperties: true },
                             messageId: { type: 'string' },
                             attachments: { type: 'array', items: { type: 'object', additionalProperties: true } },
+                            flags: { type: 'object', additionalProperties: true },
+                            hasAttachments: { type: 'boolean' },
+                            thread: { type: 'string' }
                         }
                     }
                 },
