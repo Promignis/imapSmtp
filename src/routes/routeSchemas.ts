@@ -1,6 +1,10 @@
 import { ROLES } from '../services/roleService'
 
 export const userCreateSchema = {
+    summary: "Create a new user with a given role",
+    description: '`username` will be used to create the email address in the form **username@domain**. If `tempPassword` is not passed then the server will create a random password.',
+    consumes: ['application/json'],
+    produces: ['application/json'],
     body: {
         type: 'object',
         required: ['username', 'tempPassword', 'firstName', 'lastName', 'role'],
@@ -37,6 +41,10 @@ export const userCreateSchema = {
 
 
 export const getAllMailboxSchema = {
+    summary: "Gets all the mailboxes for a user",
+    description: '`id` is the address id. Currently one user has only one id so this does not need to be passed. Pass an empty object in body, ie {}.',
+    consumes: ['application/json'],
+    produces: ['application/json'],
     body: {
         type: 'object',
         required: [],
@@ -99,6 +107,17 @@ export const loginSchema = {
 }
 
 export const getPaginatedMessagesSchema = {
+    summary: "Returns paginated list of messages for a particular mailbox of the user",
+    description: '`addressId` is the address id. \
+    Currently one user has only one address so this does not need to be passed. \n \
+    `id` is the  mailbox id. \n \
+    `limit` specifies the number of results in a page. \n \
+    `ascending` specifies the ordering of the messages based on date\n \
+    If `next` is passed then it will retireive the next page.\n \
+    To get the first page, `next` should not be passed \n \
+    `previous` can be passed to go back to the previous page.',
+    consumes: ['application/json'],
+    produces: ['application/json'],
     body: {
         type: 'object',
         required: ['id'],
@@ -158,6 +177,12 @@ export const getPaginatedMessagesSchema = {
 }
 
 export const getThreadedMessagesSchema = {
+    summary: "Returns all the messages in a particular email thread",
+    description: '`addressId` is the address id. \
+    Currently one user has only one address so this does not need to be passed. \n \
+    `id` is the thread id. The response is not paginated.',
+    consumes: ['application/json'],
+    produces: ['application/json'],
     body: {
         type: 'object',
         required: ['id'],
@@ -206,6 +231,15 @@ export const getThreadedMessagesSchema = {
 }
 
 export const outboundSchema = {
+    summary: "Creates a new email and hands it over to the smtp server to deliver",
+    description: '`addressId` is the address id. \
+    Currently one user has only one address so this does not need to be passed. \n \
+    `action` specifies the sending action. If action is **reply | replyAll | forward** then a `parentId` has to be provided. \
+    `parentId` is the id of the message that is being replied to/forwarded. Also its the resposiblity of the caller to specify correct **to |cc | bcc** values in case of replying/forwarding. \n \
+    If action is **send** then `parentId` is not needed.\n \
+    `files` property is used to add one or more email attachments.',
+    consumes: ['multipart/form-data'],
+    produces: ['application/json'],
     body: {
         type: 'object',
         required: ['to', 'action'],

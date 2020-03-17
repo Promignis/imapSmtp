@@ -50,9 +50,7 @@ const swaggerOption = {
             version: '1.0.0'
         },
         host: 'localhost',
-        schemes: ['http', 'https'],
-        consumes: ['application/json', 'multipart/form-data'],
-        produces: ['application/json'],
+        schemes: ['http', 'https']
     },
     exposeRoute: true
 }
