@@ -317,7 +317,7 @@ export function outboundMessage(fastify: any): any {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `No documents found for: ${JSON.stringify(mailboxQuery)}`, INT_ERRORS.SERVER_ERR)
         }
 
-        // If action is send/forward then need to get references from the parent
+        // If action is reply/forward then need to get references from the parent
         if (action == 'reply' || action == 'forward' || action == 'replyAll') {
             // Get parent
             let parentId: mongoose.Types.ObjectId = mongoose.Types.ObjectId(req.body.parentId)
@@ -338,7 +338,9 @@ export function outboundMessage(fastify: any): any {
             }
 
             inReplyTo = messageRes[0].messageId
-            let parentReferences = messageRes[0].parsedHeaders['references'].replace(/\s\s+/g, ' ').trim()
+
+            // If its the first message in the thread, it might not have references header. so we need to check for its existance
+            let parentReferences = messageRes[0].parsedHeaders['references'] ? messageRes[0].parsedHeaders['references'].replace(/\s\s+/g, ' ').trim() : ''
 
             // Add parent message id to references list , but only if it does not exist
             let uniqueReferences = new Set()
