@@ -1,11 +1,11 @@
-import { Line } from './types'
+import { Line, ParserOutput } from './types'
 import { commandList } from './commands'
 import { IMAPConnection } from './imapConnection'
-import { listenerCount } from 'cluster'
+import { imapCommandParser } from './imapCommandParser'
 // TODO: Take these from config
 const MAX_MESSAGE_SIZE = 1 * 1024 * 1024 // This is needed to limit message size during APPEND. For now its just 1 mb
 const MAX_LITERAL_SIZE = 2 * 1024 // This is the max literal size for commands other than APPEND
-const MAX_BAD_COMMANDS = 50;
+// const MAX_BAD_COMMANDS = 50;
 
 export class IMAPCommand {
     literals: Buffer[]
@@ -91,7 +91,17 @@ export class IMAPCommand {
     }
 
     finished() {
+        // Parse command and arguments
+        let parsedVal: ParserOutput
+        try {
+            parsedVal = imapCommandParser(this.payload, { literals: this.literals });
+        } catch (err) {
+            this.connection._imapServer.logger.error(`${this.connection.id}: Tag: ${this.tag} Error Parsing command ${this.command}: ${err.message}`, err)
+            this.connection.send(`${this.tag} BAD ${err.message}`)
+            return
+        }
 
+        console.log(parsedVal)
         // For now all commands are handeled with an error response
         setTimeout(() => {
             this.connection.send(`${this.tag} NO Command not implemented`)

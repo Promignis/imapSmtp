@@ -52,3 +52,28 @@ export interface Line {
     expectedLiteralSize?: number
 }
 
+export interface ParserOpts {
+    literals?: Buffer[]
+}
+
+export interface ParserOutput {
+    command: string
+    tag: string
+    attributes: any // This can be dynamic
+}
+
+export interface Node {
+    childNodes: Node[]
+    type: string
+    value: any,
+    closed: boolean,
+    parentNode?: Node,
+    startPos?: number,
+    endPos?: number,
+    literalPlus?: boolean
+    started?: boolean
+    chBuffer?: Buffer
+    chPos?: number
+    literalLength?: any
+}
+
