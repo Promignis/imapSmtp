@@ -17,6 +17,7 @@
     "@types/mongoose": "^5.7.0",
     "@types/nodemailer": "^6.4.0",
     "@types/object-path": "^0.11.0",
+    "@types/uuid": "^7.0.2",
     "bcrypt": "^3.0.8",
     "config": "^3.2.5",
     "express-fileupload": "^1.1.6",
@@ -31,6 +32,7 @@
     "mongoose": "^5.8.10",
     "nodemailer": "^6.4.3",
     "object-path": "^0.11.4",
+    "uuid": "^7.0.3",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^4.4.2"
   },

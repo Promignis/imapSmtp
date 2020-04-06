@@ -1,3 +1,5 @@
+import { IMAPConnection } from './imapConnection'
+
 export interface IMAPServerLogger {
     info: Function,
     warn: Function,
@@ -23,17 +25,30 @@ export enum State {
 }
 
 //IMAP command
-export interface Command {
-    tag?: string // If tag is undefined or "" then its an untagged command
-    name: string
-    arguments: { [key: string]: any }
-}
+// export interface ParsedCommand {
+//     tag?: string // If tag is undefined or "" then its an untagged command
+//     name: string
+//     arguments: { [key: string]: any }
+// }
 
 // Response will be compiled into the final result that will be sent back to client
-export interface Response {
-    tag: string,
-    name: string,
-    attributes: any[]
+// export interface Response {
+//     tag: string,
+//     name: string,
+//     attributes: any[]
+// }
+
+// export interface CommandHandler {
+//     (conn: IMAPConnection, parsedCommand: ParsedCommand): void
+// }
+
+export interface CommandMeta {
+    state: State[],
+    schema: Array<{ name: string, type: string, optional: boolean }> | null
 }
 
+export interface Line {
+    value: string
+    expectedLiteralSize?: number
+}
 

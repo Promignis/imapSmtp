@@ -14,9 +14,9 @@ import {
     createSecureContext,
     TLSSocketOptions
 } from 'tls'
+import { v4 as uuidv4 } from 'uuid'
 import { ImapServerError, IMAP_INT_ERRORS, IMAP_STATUS } from './imapErrors'
 import { IMAPConnection } from './imapConnection'
-import { throws } from 'assert'
 
 /**
  * Only supports tls connections on port 993
@@ -30,7 +30,7 @@ import { throws } from 'assert'
  */
 export class IMAPServer extends EventEmitter {
 
-    connections: Set<IMAPConnection>
+    connections: Map<string, IMAPConnection>
     logger: IMAPServerLogger
     maxConnections: number
     server: Server
@@ -38,7 +38,7 @@ export class IMAPServer extends EventEmitter {
 
     constructor(options: IMAPServerOpts) {
         super();
-        this.connections = new Set<IMAPConnection>()
+        this.connections = new Map<string, IMAPConnection>()
         // Default to 1 , can't have 0 maxConnections
         this.maxConnections = (!options.maxConnections || options.maxConnections == 0) ? 1 : options.maxConnections
         this.logger = options.logger || console
@@ -56,7 +56,7 @@ export class IMAPServer extends EventEmitter {
     }
 
     /**
-     * Can have dofferent secureContext object for different domains
+     * Can have different secureContext object for different domains
      * "*" represents a wildcard
      */
     _updateCtx(opts?: any) {
@@ -214,15 +214,35 @@ export class IMAPServer extends EventEmitter {
     }
 
     _connectSecure(socket: TLSSocket, ): void {
-        this.logger.info("new Connection")
-        let newConnection = new IMAPConnection(socket, this)
-        this.connections.add(newConnection)
+        // Create new connection id
+        let id = this._newConnectionId()
+        let newConnection = new IMAPConnection(socket, this, id)
+        this.connections.set(id, newConnection)
+        // For all logs inside a connection prefix them by connection id and command tag(if present) for easier tracking
+        // "<id>:tag:Actual message" 
+        this.logger.info(`New connection added from remote address: ${newConnection.remoteAddress} with id: ${id}`)
         newConnection.on('error', this._onError.bind(this))
         newConnection.init()
+    }
+
+    _newConnectionId() {
+        return `${uuidv4()}_${Date.now()}`
     }
 
 }
 
 let imapServer = new IMAPServer({})
+
+imapServer.on('error', function (err: Error) {
+    //@ts-ignore
+    this.logger.error(
+        {
+            tag: "NA",
+            sessionId: "NA",
+            message: err.message || `Error event on server`
+        },
+        err
+    )
+})
 
 imapServer.listen(4001, '0.0.0.0')

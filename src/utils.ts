@@ -27,7 +27,7 @@ export function generateRandomString(length: number): string {
 export async function bcryptHash(rawPassword: string): Promise<string> {
     let saltRounds = 10;
     return new Promise((res, rej) => {
-        bcrypt.hash(rawPassword, saltRounds, function (err, hash) {
+        bcrypt.hash(rawPassword, saltRounds, function (err: Error, hash: string) {
             if (err) rej(err)
             res(hash)
         })
