@@ -49,17 +49,6 @@ const AUTHENTICATE: CommandMeta = {
     ]
 }
 
-const NAMESPACE: CommandMeta = {
-    state: [State.AUTH, State.SELECTED],
-    schema: [
-        {
-            name: 'mechanism',
-            optional: false,
-            type: 'string'
-        }
-    ]
-}
-
 const LIST: CommandMeta = {
     state: [State.AUTH, State.SELECTED],
     schema: [
@@ -170,6 +159,17 @@ const EXAMINE: CommandMeta = {
             name: 'mailbox',
             optional: false,
             type: 'string'
+        }
+    ]
+}
+
+const ID: CommandMeta = {
+    state: [State.ANY],
+    schema: [
+        {
+            name: 'id',
+            optional: false,
+            type: 'array'
         }
     ]
 }
@@ -357,9 +357,15 @@ const UID_SEARCH: CommandMeta = {
     schema: null
 }
 
+const ENABLE: CommandMeta = {
+    state: [State.AUTH],
+    schema: []
+}
+
 
 export const commandList: Map<string, CommandMeta> = new Map([
     ['CAPABILITY', CAPABLITY],
+    ['ID', ID],
     ['NOOP', NOOP],
     ['LOGOUT', LOGOUT],
     ['LOGIN', LOGIN],
@@ -377,6 +383,7 @@ export const commandList: Map<string, CommandMeta> = new Map([
     ['UNSELECT', UNSELECT],
     ['FETCH', FETCH],
     ['SEARCH', SEARCH],
+    ['ENABLE', ENABLE],
     /**
     * UID command can have 2 forms , one is 'UID STORE/COPY/FETCH' and the other is 'UID SEARCH'
     * Each form is being treated as an indipendent command for easier handling instead of treating UID as an indipendent command 

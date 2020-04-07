@@ -159,6 +159,25 @@ export class IMAPConnection extends EventEmitter {
 
     }
 
+    // Returns the list of capablities supported by the server in different states
+    getCapabilities(): string[] {
+        let capabilities: string[] = ['IMAP4rev1']
+        if (this.state == State.NOTAUTH) {
+            capabilities.push('ID') //rfc2971, For server and client to exchange ids
+        } else {
+            capabilities.push('ID')
+            capabilities.push('UNSELECT')
+            capabilities.push('SPECIAL-USE') // // rfc6154
+            capabilities.push('CONDSTORE') // rfc4551
+            capabilities.push('ENABLE')
+            // Can be added in future easily
+            // capabilities.push('UIDPLUS') // rfc4315 , adds UID EXPUNGE command
+            // capabilities.push('UTF8=ACCEPT') // rfc6855
+        }
+
+        return capabilities
+    }
+
 
     // Send response back to client
 
