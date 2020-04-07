@@ -1,12 +1,5 @@
-import { IMAPConnection } from './imapConnection'
+import { State } from './constants'
 
-export interface IMAPServerLogger {
-    info: Function,
-    warn: Function,
-    error: Function,
-    log: Function,
-    debug: Function
-}
 
 export interface logMessage {
     sessionId: string,
@@ -14,33 +7,19 @@ export interface logMessage {
     message: string
 }
 
+export interface IMAPServerLogger {
+    info: (message: logMessage | string) => void,
+    warn: (message: logMessage | string) => void,
+    error: (message: logMessage | string, err?: Error) => void,
+    log: (message: logMessage | string) => void,
+    debug: (message: logMessage | string) => void
+}
+
 export interface IMAPServerOpts {
     logger?: IMAPServerLogger, // Default logger is console
     // Max number of connections for a given user. if  0, will default to 1
     maxConnections?: number,
 }
-
-export enum State {
-    'ANY', 'AUTH', 'NOTAUTH', 'SELECTED'
-}
-
-//IMAP command
-// export interface ParsedCommand {
-//     tag?: string // If tag is undefined or "" then its an untagged command
-//     name: string
-//     arguments: { [key: string]: any }
-// }
-
-// Response will be compiled into the final result that will be sent back to client
-// export interface Response {
-//     tag: string,
-//     name: string,
-//     attributes: any[]
-// }
-
-// export interface CommandHandler {
-//     (conn: IMAPConnection, parsedCommand: ParsedCommand): void
-// }
 
 export interface CommandMeta {
     state: State[],
@@ -77,3 +56,40 @@ export interface Node {
     literalLength?: any
 }
 
+export type RespStatus = 'OK' | 'BAD' | 'NO' | 'PREAUTH' | 'BYE'
+
+// Refer: www.iana.org/assignments/imap-response-codes/imap-response-codes.xhtml for the complete list
+// For now taking only the codes mentioned in rfc3501 section 7.1
+export type RespCode = 'ALERT'
+    | 'BADCHARSET'
+    | 'CAPABILITY'
+    | 'PARSE'
+    | 'PERMANENTFLAGS'
+    | 'READ-ONLY'
+    | 'READ-WRITE'
+    | 'TRYCREATE'
+    | 'UIDNEXT'
+    | 'UIDVALIDITY'
+    | 'UNSEEN'
+
+//Server responses are in three forms: status responses, server data, and command continuation request
+export interface IMAPStatusResponse {
+    tag?: string
+    // The status type.
+    type: RespStatus
+    // The status code.
+    code?: RespCode
+    // Arguments provided with the status code.
+    args?: string[]
+    // The status info.
+    info?: string
+}
+
+export interface IMAPDataResponse {
+    tag?: string
+    fields: any[]
+}
+
+export interface IMAPCommandContResponse {
+    info?: string
+}

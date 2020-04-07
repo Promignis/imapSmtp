@@ -1,9 +1,10 @@
 import { EventEmitter } from 'events'
-import os from 'os'
 import { IMAPServer } from './imapServer'
 import { TLSSocket } from 'tls'
-import { State } from './types'
+import { State } from './constants'
 import { StreamHandler } from './streamHandler'
+import { IMAPStatusResponse, IMAPDataResponse, IMAPCommandContResponse } from './types'
+import { throws } from 'assert'
 
 const SOCKET_TIMEOUT = 60 * 1000 * 30 // 30 minutes
 
@@ -158,10 +159,31 @@ export class IMAPConnection extends EventEmitter {
 
     }
 
+
+    // Send response back to client
+
+    // of form TAG STATUS [CODE ARGS]? INFO?
+    sendStatusResponse(resp: IMAPStatusResponse, cb?: () => void) {
+
+        let args = resp.args ? `${resp.args.length != 0 ? resp.args.join(' ') : ''}` : ''
+        let code = resp.code ? ` [${resp.code} ${args}]` : ''
+        let info = resp.info ? ` ${resp.info}` : ''
+        let payload = `${resp.tag || '*'} ${resp.type}${code}${info}`
+
+        this.send(payload)
+    }
+
+    sendDataResponse(resp: IMAPDataResponse, cb?: () => void) {
+        // TODO: Add Implemetation
+    }
+
+    sendCommandContResponse(resp: IMAPCommandContResponse, cb?: () => void) {
+        this.send(`+ ${resp.info || ''}`)
+    }
+
     // Send response 
     // Takes an optional callback that will be called after the payload was written successfully
-    // TODO: Add a response object type , with Tag, status Message and results
-    // Refer: #rfc3501_line2687 
+    // Refer: #rfc3501 section 7
     send(payload: string, writeDone?: () => void) {
         if (this._socket && this._socket.writable) {
             try {
@@ -186,6 +208,4 @@ export class IMAPConnection extends EventEmitter {
             this.close(false)
         }
     }
-
-
 }
