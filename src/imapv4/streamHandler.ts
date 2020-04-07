@@ -4,6 +4,12 @@ import { IMAPConnection } from './imapConnection'
 import { Line } from './types'
 import { promisify } from 'util'
 
+
+// Refer rfc7162 section 4
+// A client should limit the  length of the command lines it generates to approximately 8192 octets
+// If more than that passed , server should return and error and stop processing that line
+const MAX_LINE_LENGTH = 8192
+
 // This reads the incoming data on the tcp socket and 
 // correctly extracts the command lines and literals
 export class StreamHandler extends Writable {
@@ -29,13 +35,18 @@ export class StreamHandler extends Writable {
 
 
     _write(chunk: any, encoding: string, done: (error?: Error | null) => void): void {
+        if (!chunk || !chunk.length) {
+            return done();
+        }
         let data = this.remaining + chunk.toString('binary')
+
         // Reset remaining
         this.remaining = ''
         this.read(data, done)
     }
 
     read = async (data: string, done: (error?: Error | null) => void) => {
+
         // Every imap command ends with \r\n. This regex checks if current data has crlf
         let CommandEndRegex = /\r?\n/g
         // Checks if the given command has any literal arguments. Commands with literal arguments
@@ -46,6 +57,27 @@ export class StreamHandler extends Writable {
         let line: string = ''
 
         let command: IMAPCommand
+
+        if (data.length > MAX_LINE_LENGTH) {
+            let maxLineLengthError = new Error(`Max line length exceeded: ${data.length}`)
+            let tag = this.existingCommand ? this.existingCommand.tag : '*'
+            // Log error
+            this.connection._imapServer.logger.error(`${this.connection.id}: TAG:${tag} ${maxLineLengthError.message}`, maxLineLengthError)
+
+            // Send error response
+            // If existing command then send tagged response or else send untagged response
+            this.connection.send(`${tag} BAD Max line length exceeded`)
+
+            // Reset state
+            this.existingCommand = null
+            this.expectedLiterals = 0
+            this.literalWriter = null
+            this.literalChunks = []
+            this.literalChunkslen = 0
+
+            // continue reading
+            return done()
+        }
 
         // If an existing command is still going on
         if (this.expectedLiterals > 0) {
@@ -79,6 +111,7 @@ export class StreamHandler extends Writable {
         if (match) {
             line = data.substr(0, match.index)
         } else {
+            console.log('here')
             this.remaining = data
             // Continue reading more
             return done()
