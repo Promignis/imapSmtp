@@ -71,6 +71,7 @@ export type RespCode = 'ALERT'
     | 'UIDNEXT'
     | 'UIDVALIDITY'
     | 'UNSEEN'
+    | 'TOOBIG' //rfc4469
 
 //Server responses are in three forms: status responses, server data, and command continuation request
 export interface IMAPStatusResponse {

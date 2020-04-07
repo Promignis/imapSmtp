@@ -3,6 +3,7 @@ import { IMAPCommand } from './imapCommand'
 import { IMAPConnection } from './imapConnection'
 import { Line } from './types'
 import { promisify } from 'util'
+import { IMAPResponseStatus } from './constants'
 
 
 // Refer rfc7162 section 4
@@ -66,7 +67,11 @@ export class StreamHandler extends Writable {
 
             // Send error response
             // If existing command then send tagged response or else send untagged response
-            this.connection.send(`${tag} BAD Max line length exceeded`)
+            this.connection.sendStatusResponse({
+                tag: tag,
+                type: IMAPResponseStatus.BAD,
+                info: 'Max line length exceeded'
+            })
 
             // Reset state
             this.existingCommand = null
@@ -153,8 +158,7 @@ export class StreamHandler extends Writable {
                 // Setup literalWriter
                 this.literalWriter = new PassThrough()
                 // Send Command Continuation Request 
-                this.connection.send('+ Go ahead')
-
+                this.connection.sendCommandContResponse({ info: 'Go ahead' })
                 // Setup event listeners
                 this.literalWriter.on('data', (chunk: Buffer) => {
                     //  write the upcoming literal chunks into a buffer

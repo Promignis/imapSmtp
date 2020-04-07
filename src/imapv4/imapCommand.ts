@@ -2,6 +2,7 @@ import { Line, ParserOutput } from './types'
 import { commandList } from './commands'
 import { IMAPConnection } from './imapConnection'
 import { imapCommandParser } from './imapCommandParser'
+import { IMAPResponseStatus, IMAPResponseCode } from './constants'
 // TODO: Take these from config
 const MAX_MESSAGE_SIZE = 1 * 1024 * 1024 // This is needed to limit message size during APPEND. For now its just 1 mb
 const MAX_LITERAL_SIZE = 2 * 1024 // This is the max literal size for commands other than APPEND
@@ -41,17 +42,21 @@ export class IMAPCommand {
             this.command = (match[2] || '').trim().toUpperCase();
 
             if (!this.tag) {
-                this.connection.send('* BAD Invalid tag')
+                this.connection.sendStatusResponse({ type: IMAPResponseStatus.BAD, info: 'Invalid tag' })
                 return new Error(`Invalid Tag`)
             }
 
             if (!this.command) {
-                this.connection.send('* BAD Invalid command')
+                this.connection.sendStatusResponse({ type: IMAPResponseStatus.BAD, info: 'Invalid command' })
                 return new Error(`Invalid command`)
             }
 
             if (!commandList.has(this.command)) {
-                this.connection.send(`${this.tag} BAD Unknown command: ${this.command}`)
+                this.connection.sendStatusResponse({
+                    tag: this.tag,
+                    type: IMAPResponseStatus.BAD,
+                    info: `Unknown command: ${this.command}`
+                })
                 return new Error(`Unknown command ${this.command}`)
             }
 
@@ -61,8 +66,11 @@ export class IMAPCommand {
 
             // check for nan
             if (isNaN(line.expectedLiteralSize) || (!isNaN(line.expectedLiteralSize) && line.expectedLiteralSize < 0) || line.expectedLiteralSize > Number.MAX_SAFE_INTEGER) {
-                this.connection.send(`${this.tag} Invalid Literal Size`)
-
+                this.connection.sendStatusResponse({
+                    tag: this.tag,
+                    type: IMAPResponseStatus.BAD,
+                    info: 'Invalid Literal Size'
+                })
                 return new Error(`Invalid Literal Size`)
             }
 
@@ -70,12 +78,22 @@ export class IMAPCommand {
             if (this.command == 'APPEND' && line.expectedLiteralSize > MAX_MESSAGE_SIZE) {
                 // APPENDLIMIT response for too large messages
                 // TOOBIG: https://tools.ietf.org/html/rfc4469#section-4.2
-                this.connection.send(`${this.tag} NO [TOOBIG] Literal too large`)
+                this.connection.sendStatusResponse({
+                    tag: this.tag,
+                    type: IMAPResponseStatus.NO,
+                    code: IMAPResponseCode.TOOBIG,
+                    info: 'Literal too large'
+                })
                 return new Error(`Literal too large`)
             }
 
             if (this.command != 'APPEND' && line.expectedLiteralSize > MAX_LITERAL_SIZE) {
-                this.connection.send(`${this.tag} NO Literal too large`)
+                this.connection.sendStatusResponse({
+                    tag: this.tag,
+                    type: IMAPResponseStatus.NO,
+                    code: IMAPResponseCode.TOOBIG,
+                    info: 'Literal too large'
+                })
                 return new Error(`Literal too large`)
             }
 
@@ -97,14 +115,22 @@ export class IMAPCommand {
             parsedVal = imapCommandParser(this.payload, { literals: this.literals });
         } catch (err) {
             this.connection._imapServer.logger.error(`${this.connection.id}: Tag: ${this.tag} Error Parsing command ${this.command}: ${err.message}`, err)
-            this.connection.send(`${this.tag} BAD ${err.message}`)
+            this.connection.sendStatusResponse({
+                tag: this.tag,
+                type: IMAPResponseStatus.NO,
+                info: err.message
+            })
             return
         }
 
         console.log(parsedVal)
         // For now all commands are handeled with an error response
         setTimeout(() => {
-            this.connection.send(`${this.tag} NO Command not implemented`)
+            this.connection.sendStatusResponse({
+                tag: this.tag,
+                type: IMAPResponseStatus.NO,
+                info: 'Command not implemented'
+            })
         }, 3000)
     }
 

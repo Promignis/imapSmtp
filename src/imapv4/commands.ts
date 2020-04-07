@@ -1,4 +1,5 @@
-import { State, CommandMeta } from './types'
+import { CommandMeta } from './types'
+import { State } from './constants'
 
 
 const NOOP: CommandMeta = {

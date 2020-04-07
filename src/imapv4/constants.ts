@@ -48,6 +48,7 @@ export const IMAPResponseCode: { [key: string]: RespCode } = {
     UIDVALIDITY: 'UIDVALIDITY',
     UNSEEN: 'UNSEEN',
     READ_WRITE: 'READ-WRITE',
-    READ_ONLY: 'READ-ONLY'
+    READ_ONLY: 'READ-ONLY',
+    TOOBIG: 'TOOBIG'
 }
 
