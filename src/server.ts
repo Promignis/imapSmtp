@@ -164,6 +164,7 @@ export const startIMAPServer = async () => {
     promisify(imapServer.listen)
     try {
         await imapServer.listen(4001, '0.0.0.0')
+        started = true
         server.log.info(`Secure IMAP Server started on 0.0.0.0:4001`)
     } catch (err) {
         server.log.error('Error starting imap server', err)
