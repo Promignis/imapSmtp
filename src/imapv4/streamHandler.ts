@@ -116,7 +116,6 @@ export class StreamHandler extends Writable {
         if (match) {
             line = data.substr(0, match.index)
         } else {
-            console.log('here')
             this.remaining = data
             // Continue reading more
             return done()
@@ -188,6 +187,7 @@ export class StreamHandler extends Writable {
                 // If no error during adding the line then finish the command
                 command.finished()
             }
+            // TODO: Log the error. Protocol errors have to be logged as info, system errors as error
             // Reset to handle next command
             this.existingCommand = null
             // Continue reading the next chunks

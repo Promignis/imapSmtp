@@ -1,10 +1,9 @@
 import { EventEmitter } from 'events'
 import { IMAPServer } from './imapServer'
 import { TLSSocket } from 'tls'
-import { State } from './constants'
+import { State, MAX_MESSAGE_SIZE } from './constants'
 import { StreamHandler } from './streamHandler'
-import { IMAPStatusResponse, IMAPDataResponse, IMAPCommandContResponse } from './types'
-import { throws } from 'assert'
+import { IMAPStatusResponse, IMAPDataResponse, IMAPCommandContResponse, IMAPSession } from './types'
 
 const SOCKET_TIMEOUT = 60 * 1000 * 30 // 30 minutes
 
@@ -28,7 +27,7 @@ export class IMAPConnection extends EventEmitter {
     selected: boolean;
     selectedMailboxData: any //TODO: Type it
     // current session metadata , for eg. logged in user etc
-    sessionMetadata: any //TODO: Type it
+    session: IMAPSession | null
     // Resolved hostname for remote IP address
     clientHostName: string
     // This will read the incoming tcp strem and extract commands
@@ -43,7 +42,7 @@ export class IMAPConnection extends EventEmitter {
         this.remoteAddress = this._socket.remoteAddress || ''
         // All connections start in a Not Authenticated state
         this.state = State.NOTAUTH
-        this.sessionMetadata = {}
+        this.session = null
         this.selected = false
         this.selectedMailboxData = {}
         this.clientHostName = ""
@@ -74,8 +73,14 @@ export class IMAPConnection extends EventEmitter {
 
     }
 
-    setSessionMetadata() {
+    setSession(ses: IMAPSession) {
+        if (this.session == null) {
+            this.session = ses
+        }
+    }
 
+    setState(state: State) {
+        this.state = state
     }
 
     _startSession() {
@@ -170,6 +175,7 @@ export class IMAPConnection extends EventEmitter {
             capabilities.push('SPECIAL-USE') // // rfc6154
             capabilities.push('CONDSTORE') // rfc4551
             capabilities.push('ENABLE')
+            capabilities.push(`APPENDLIMIT=${MAX_MESSAGE_SIZE}`)
             // Can be added in future easily
             // capabilities.push('UIDPLUS') // rfc4315 , adds UID EXPUNGE command
             // capabilities.push('UTF8=ACCEPT') // rfc6855
@@ -187,7 +193,10 @@ export class IMAPConnection extends EventEmitter {
         let args = resp.args ? `${resp.args.length != 0 ? resp.args.join(' ') : ''}` : ''
         let code = resp.code ? ` [${resp.code} ${args}]` : ''
         let info = resp.info ? ` ${resp.info}` : ''
-        let payload = `${resp.tag || '*'} ${resp.type}${code}${info}`
+        let tag = resp.tag || '*'
+        let payload = `${tag} ${resp.type}${code}${info}`
+
+        this._imapServer.logger.info(`${this.id}: TAG: ${tag} Status response sent ${resp}`)
 
         this.send(payload)
     }

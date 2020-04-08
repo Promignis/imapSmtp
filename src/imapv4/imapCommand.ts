@@ -1,12 +1,15 @@
-import { Line, ParserOutput } from './types'
+import { Line, ParsedCommand } from './types'
 import { commandList } from './commands'
 import { IMAPConnection } from './imapConnection'
 import { imapCommandParser } from './imapCommandParser'
-import { IMAPResponseStatus, IMAPResponseCode } from './constants'
-// TODO: Take these from config
-const MAX_MESSAGE_SIZE = 1 * 1024 * 1024 // This is needed to limit message size during APPEND. For now its just 1 mb
-const MAX_LITERAL_SIZE = 2 * 1024 // This is the max literal size for commands other than APPEND
-// const MAX_BAD_COMMANDS = 50;
+import {
+    IMAPResponseStatus,
+    IMAPResponseCode,
+    MAX_LITERAL_SIZE,
+    MAX_MESSAGE_SIZE
+} from './constants'
+import { to } from './utils'
+
 
 export class IMAPCommand {
     literals: Buffer[]
@@ -108,9 +111,9 @@ export class IMAPCommand {
         this.literals.push(literal)
     }
 
-    finished() {
+    async finished() {
         // Parse command and arguments
-        let parsedVal: ParserOutput
+        let parsedVal: ParsedCommand
         try {
             parsedVal = imapCommandParser(this.payload, { literals: this.literals });
         } catch (err) {
@@ -124,14 +127,63 @@ export class IMAPCommand {
         }
 
         console.log(parsedVal)
-        // For now all commands are handeled with an error response
-        setTimeout(() => {
+
+        // Validate the state
+        let cmdMeta = commandList.get(this.command)
+
+        // If no handler is present
+        if (!cmdMeta!.handler) {
+            this.connection.sendStatusResponse({
+                tag: this.tag,
+                type: IMAPResponseStatus.BAD,
+                info: `Command ${this.command} not implemented`
+            })
+            return
+        }
+
+        let schema = cmdMeta!.schema
+
+        // Argument Valdation
+        if (schema != null && schema.length != 0) {
+            let maxArgs = schema.length
+            let minArgs = schema.filter(item => !item.optional).length
+
+            // Deny commands with too many arguments
+            if (parsedVal.attributes && parsedVal.attributes.length > maxArgs) {
+                this.connection.sendStatusResponse({
+                    tag: this.tag,
+                    type: IMAPResponseStatus.BAD,
+                    info: `Invalid Arguments too many`
+                })
+            }
+
+            if (((parsedVal.attributes && parsedVal.attributes.length) || 0) < minArgs) {
+                this.connection.sendStatusResponse({
+                    tag: this.tag,
+                    type: IMAPResponseStatus.BAD,
+                    info: `Invalid Arguments too few`
+                })
+            }
+        }
+
+        let [err, res] = await to(cmdMeta!.handler(this.connection, parsedVal))
+
+        if (err != null) {
+            // Log error
+            this.connection._imapServer.logger.error(`${this.connection.id}: TAG:${this.tag} Error while handling command: ${err.message}`, err)
+            // Send NO status response
             this.connection.sendStatusResponse({
                 tag: this.tag,
                 type: IMAPResponseStatus.NO,
-                info: 'Command not implemented'
+                code: IMAPResponseCode.SERVERBUG,
+                info: `Internal Server Error`
             })
-        }, 3000)
+        } else {
+            // If no error, send the final status response
+            this.connection.sendStatusResponse(res!)
+        }
+
+
     }
 
 }

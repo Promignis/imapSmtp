@@ -1,5 +1,5 @@
 import { imapFormalSyntax } from './imapFormalSyntax'
-import { ParserOpts, ParserOutput, Node } from './types'
+import { ParserOpts, ParsedCommand, Node } from './types'
 
 
 class TokenParser {
@@ -625,9 +625,9 @@ class ParserInstance {
     }
 }
 
-export const imapCommandParser = (command: string, options: ParserOpts) => {
+export const imapCommandParser = (command: string, options: ParserOpts): ParsedCommand => {
     let parser = new ParserInstance(command, options)
-    let response: ParserOutput = <ParserOutput>{}
+    let response: ParsedCommand = <ParsedCommand>{}
 
     options = options || {}
 

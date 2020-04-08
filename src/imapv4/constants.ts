@@ -1,5 +1,11 @@
 import { RespStatus, RespCode } from './types'
 
+
+// TODO: Take these from config
+export const MAX_MESSAGE_SIZE = 1 * 1024 * 1024 // This is needed to limit message size during APPEND. For now its just 1 mb
+export const MAX_LITERAL_SIZE = 8 * 1024 // This is the max literal size for commands other than APPEND
+// const MAX_BAD_COMMANDS = 50;
+
 export enum State {
     'ANY', 'AUTH', 'NOTAUTH', 'SELECTED'
 }
@@ -49,6 +55,8 @@ export const IMAPResponseCode: { [key: string]: RespCode } = {
     UNSEEN: 'UNSEEN',
     READ_WRITE: 'READ-WRITE',
     READ_ONLY: 'READ-ONLY',
-    TOOBIG: 'TOOBIG'
+    TOOBIG: 'TOOBIG',
+    AUTHENTICATIONFAILED: 'AUTHENTICATIONFAILED',
+    SERVERBUG: 'SERVERBUG'
 }
 

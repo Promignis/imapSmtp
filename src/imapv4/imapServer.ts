@@ -6,7 +6,8 @@ import { createServer, Server, Socket, AddressInfo } from 'net'
 import {
     IMAPServerOpts,
     IMAPServerLogger,
-    logMessage
+    logMessage,
+    IMAPHandlerServices
 } from './types'
 import {
     TLSSocket,
@@ -17,6 +18,7 @@ import {
 import { v4 as uuidv4 } from 'uuid'
 import { ImapServerError, IMAP_INT_ERRORS, IMAP_STATUS } from './imapErrors'
 import { IMAPConnection } from './imapConnection'
+import { onLoginResp } from './types'
 
 /**
  * Only supports tls connections on port 993
@@ -35,7 +37,7 @@ export class IMAPServer extends EventEmitter {
     maxConnections: number
     server: Server
     secureContexts: Map<string, SecureContext>
-
+    handlerServices: IMAPHandlerServices
     constructor(options: IMAPServerOpts) {
         super();
         this.connections = new Map<string, IMAPConnection>()
@@ -46,7 +48,27 @@ export class IMAPServer extends EventEmitter {
         // Load all the certs needed
         this._updateCtx()
         this.server = this._createServer()
-
+        // All services are initialized with null 
+        // services can then be added while setting up the server
+        // This is done so that core IMAP server is decoupled from the services layer
+        this.handlerServices = {
+            onLogin: null,
+            onFetch: null,
+            onList: null,
+            onLsub: null,
+            onSubscribe: null,
+            onUnsubscribe: null,
+            onCreate: null,
+            onRename: null,
+            onDelete: null,
+            onOpen: null,
+            onStatus: null,
+            onAppend: null,
+            onStore: null,
+            onExpunge: null,
+            onCopy: null,
+            onSearch: null,
+        }
         // Setup event listners for server
         this._setListeners()
     }
@@ -228,10 +250,23 @@ export class IMAPServer extends EventEmitter {
     _newConnectionId() {
         return `${uuidv4()}_${Date.now()}`
     }
-
 }
 
 let imapServer = new IMAPServer({})
+
+// Attach services
+// Mocking it for now
+imapServer.handlerServices.onLogin = async function (username: string, password: string): Promise<onLoginResp> {
+    return {
+        success: true,
+        session: {
+            userUUID: 'uuid',
+            sessionProps: {
+                accessKey: "somekey"
+            }
+        }
+    }
+}
 
 imapServer.on('error', function (err: Error) {
     //@ts-ignore

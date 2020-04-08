@@ -1,5 +1,6 @@
 import { CommandMeta } from './types'
 import { State } from './constants'
+import { login } from './handlers'
 
 
 const NOOP: CommandMeta = {
@@ -25,7 +26,8 @@ const LOGIN: CommandMeta = {
             optional: false,
             type: 'string'
         }
-    ]
+    ],
+    handler: login
 }
 
 const LOGOUT: CommandMeta = {
