@@ -11,6 +11,7 @@ import { servicesPlugin } from './services/servicePlugin'
 import { initDbDocsPlugin, InitDb } from './services/initDbDocsPlugin'
 import { transactionPlugin } from './transactions/transactionPlugin'
 import { setupGrpcPlugin } from './proto/grpcPlugin'
+import { setupIMAPPlugin } from './imapFastifyPlugin'
 import { globalErrorHandler } from './handlers/errorHandlers'
 import userRoutes from './routes/userRoutes'
 import mailboxRoutes from './routes/mailboxRoutes'
@@ -19,6 +20,7 @@ import loginRoutes from './routes/authRoutes'
 import fastifyJWT from 'fastify-jwt'
 import { isNotEmpty } from './ajvPlugins'
 import { fileHandlerPlugin } from './fileHandlerPlugin'
+import { promisify } from 'util'
 
 // If using http2 we'd pass <http2.Http2Server, http2.Http2ServerRequest, http2.Http2ServerResponse>
 const server: fastify.FastifyInstance<Server, IncomingMessage, ServerResponse> = fastify({
@@ -90,6 +92,9 @@ server.setErrorHandler(globalErrorHandler)
 // Setup grpc
 server.register(setupGrpcPlugin)
 
+// Setup imap server
+server.register(setupIMAPPlugin)
+
 // Setup multipart content handler and file upload handler
 server.register(fileHandlerPlugin)
 
@@ -135,6 +140,33 @@ export const startGrpcServer = async () => {
         }
     } catch (e) {
         server.log.error("Grpc server Could not serve: ", e)
+        process.exit(1)
+    }
+}
+
+export const startIMAPServer = async () => {
+
+    let fastify: any = server
+
+    let imapServer = fastify.imapServer
+
+    let started = false
+
+    imapServer.on('error', function (err: Error) {
+        if (!started) {
+            // If the server has not started and an error occures then kill the process
+            server.log.error('Error starting imap server', err)
+            process.exit(1)
+        }
+    })
+
+    // TODO: Check if any startup errors are properly handled
+    promisify(imapServer.listen)
+    try {
+        await imapServer.listen(4001, '0.0.0.0')
+        server.log.info(`Secure IMAP Server started on 0.0.0.0:4001`)
+    } catch (err) {
+        server.log.error('Error starting imap server', err)
         process.exit(1)
     }
 }

@@ -1,4 +1,4 @@
-import mongoose, { mongo } from 'mongoose'
+import mongoose from 'mongoose'
 import fastifyPlugin from 'fastify-plugin'
 import path from 'path'
 // Using Mali instead of directly using node grpc package because it does not support promises

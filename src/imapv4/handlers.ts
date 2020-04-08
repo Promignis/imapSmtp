@@ -41,6 +41,6 @@ export const login: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
         tag: cmd.tag,
         type: IMAPResponseStatus.NO,
         code: IMAPResponseCode.AUTHENTICATIONFAILED,
-        info: `Authenticated`
+        info: `Invalid Credentials`
     }
 }

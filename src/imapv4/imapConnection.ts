@@ -91,7 +91,7 @@ export class IMAPConnection extends EventEmitter {
     _onError = (err: Error) => {
         this._imapServer.logger.error(`${this.id}: Socket error ${err.message || ''}`, err!)
         this.close(false)
-        return
+        this.emit(err.message)
     }
 
     // Fired when socket timeouts. It closes the connection

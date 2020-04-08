@@ -251,33 +251,3 @@ export class IMAPServer extends EventEmitter {
         return `${uuidv4()}_${Date.now()}`
     }
 }
-
-let imapServer = new IMAPServer({})
-
-// Attach services
-// Mocking it for now
-imapServer.handlerServices.onLogin = async function (username: string, password: string): Promise<onLoginResp> {
-    return {
-        success: true,
-        session: {
-            userUUID: 'uuid',
-            sessionProps: {
-                accessKey: "somekey"
-            }
-        }
-    }
-}
-
-imapServer.on('error', function (err: Error) {
-    //@ts-ignore
-    this.logger.error(
-        {
-            tag: "NA",
-            sessionId: "NA",
-            message: err.message || `Error event on server`
-        },
-        err
-    )
-})
-
-imapServer.listen(4001, '0.0.0.0')

@@ -1,5 +1,5 @@
 import { httpLogger, imapLogger } from './logger'
-import startHTTP, { startGrpcServer } from './server'
+import startHTTP, { startGrpcServer, startIMAPServer } from './server'
 
 export default async function start() {
     httpLogger.info(`Starting the services... (ProcessId: ${process.pid})`)
@@ -9,4 +9,5 @@ export default async function start() {
     httpLogger.info(`Starting GrpcServer...`)
     await startGrpcServer()
     httpLogger.info(`Starting IMAP server...`)
+    await startIMAPServer()
 }
