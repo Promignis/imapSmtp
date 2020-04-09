@@ -165,7 +165,7 @@ export class IMAPConnection extends EventEmitter {
     }
 
     // Returns the list of capablities supported by the server in different states
-    getCapabilities(): string[] {
+    _getCapabilities(): string[] {
         let capabilities: string[] = ['IMAP4rev1']
         if (this.state == State.NOTAUTH) {
             capabilities.push('ID') //rfc2971, For server and client to exchange ids
@@ -196,7 +196,7 @@ export class IMAPConnection extends EventEmitter {
         let tag = resp.tag || '*'
         let payload = `${tag} ${resp.type}${code}${info}`
 
-        this._imapServer.logger.info(`${this.id}: TAG: ${tag} Status response sent ${resp}`)
+        this._imapServer.logger.info(`${this.id}: TAG: ${tag} Status response sent ${JSON.stringify(resp)}`)
 
         this.send(payload)
     }
@@ -207,6 +207,12 @@ export class IMAPConnection extends EventEmitter {
 
     sendCommandContResponse(resp: IMAPCommandContResponse, cb?: () => void) {
         this.send(`+ ${resp.info || ''}`)
+    }
+
+    sendCapablity() {
+        let cap = this._getCapabilities().join(' ')
+        let payload = `*  CAPABILITY ${cap}`
+        this.send(payload)
     }
 
     // Send response 

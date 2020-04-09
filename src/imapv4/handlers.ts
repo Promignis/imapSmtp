@@ -29,6 +29,9 @@ export const login: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
         conn.setSession(res!.session)
         conn.setState(State.AUTH)
 
+        // Send capablities on successfull login
+        conn.sendCapablity()
+
         return {
             tag: cmd.tag,
             type: IMAPResponseStatus.OK,

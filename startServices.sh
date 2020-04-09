@@ -20,7 +20,7 @@ else
 
     export TEST=ttt
     # build and start
-    echo "Starting services..."
+    echo "Starting services ($NODE_ENV)"
     sudo -E npm run start
 fi
 
