@@ -131,6 +131,18 @@ export class IMAPCommand {
         // Validate the state
         let cmdMeta = commandList.get(this.command)
 
+        // If command state is not an empty array or it does not have the current connection state 
+        // tat means this command can not be executed in the current state 
+        if (!(cmdMeta!.state.length != 0 || cmdMeta!.state.includes(this.connection.state))) {
+            this.connection.sendStatusResponse({
+                tag: this.tag,
+                type: IMAPResponseStatus.BAD,
+                info: `Invalid state for ${this.command}`
+            })
+            return
+        }
+
+
         // If no handler is present
         if (!cmdMeta!.handler) {
             this.connection.sendStatusResponse({
@@ -155,6 +167,8 @@ export class IMAPCommand {
                     type: IMAPResponseStatus.BAD,
                     info: `Invalid Arguments too many`
                 })
+
+                return
             }
 
             if (((parsedVal.attributes && parsedVal.attributes.length) || 0) < minArgs) {
@@ -163,10 +177,12 @@ export class IMAPCommand {
                     type: IMAPResponseStatus.BAD,
                     info: `Invalid Arguments too few`
                 })
+
+                return
             }
         }
 
-        let [err, res] = await to(cmdMeta!.handler(this.connection, parsedVal))
+        let [err, res] = await to(cmdMeta!.handler!(this.connection, parsedVal))
 
         if (err != null) {
             // Log error

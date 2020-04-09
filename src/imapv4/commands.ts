@@ -4,12 +4,12 @@ import { login } from './handlers'
 
 
 const NOOP: CommandMeta = {
-    state: [State.ANY],
+    state: [], // If state array is empty , it means this command will work in all states
     schema: []
 }
 
 const CAPABLITY: CommandMeta = {
-    state: [State.ANY],
+    state: [],
     schema: [] // Empty array means it takes no arguments
 }
 
@@ -31,7 +31,7 @@ const LOGIN: CommandMeta = {
 }
 
 const LOGOUT: CommandMeta = {
-    state: [State.ANY],
+    state: [],
     schema: []
 }
 
@@ -166,7 +166,7 @@ const EXAMINE: CommandMeta = {
 }
 
 const ID: CommandMeta = {
-    state: [State.ANY],
+    state: [],
     schema: [
         {
             name: 'id',

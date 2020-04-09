@@ -95,7 +95,9 @@ let imapServerLogger = createLogger(
     }
 )
 
-if (process.env.NODE_ENV !== 'production') {
+let deployedEnvs = ['production', 'staging']
+
+if (!deployedEnvs.includes(<string>process.env.NODE_ENV)) {
     // Will add console logging only in development enviornment
     logger.add(consoleTransport)
     imapServerLogger.add(imapLoggerConsoleTransport)

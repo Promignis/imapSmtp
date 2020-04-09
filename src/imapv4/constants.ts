@@ -7,7 +7,7 @@ export const MAX_LITERAL_SIZE = 8 * 1024 // This is the max literal size for com
 // const MAX_BAD_COMMANDS = 50;
 
 export enum State {
-    'ANY', 'AUTH', 'NOTAUTH', 'SELECTED'
+    'AUTH', 'NOTAUTH', 'SELECTED'
 }
 
 // Refer rfc3501 section 7.1.
