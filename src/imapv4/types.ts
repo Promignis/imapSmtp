@@ -8,11 +8,11 @@ export interface logMessage {
 }
 
 export interface IMAPServerLogger {
-    info: (message: logMessage | string) => void,
-    warn: (message: logMessage | string) => void,
-    error: (message: logMessage | string, err?: Error) => void,
-    log: (message: logMessage | string) => void,
-    debug: (message: logMessage | string) => void
+    info: (msg: logMessage | string) => void,
+    warn: (msg: logMessage | string) => void,
+    error: (msg: logMessage | string, err?: Error) => void,
+    log: (msg: logMessage | string) => void,
+    debug: (msg: logMessage | string) => void
 }
 
 export interface IMAPServerOpts {

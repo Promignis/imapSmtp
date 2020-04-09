@@ -8,7 +8,7 @@ import { imapLogger } from './logger'
 async function setupIMAPServer(fastify: any, { }, done: Function) {
 
     // TODO: Add logger
-    let server = new imapServer({ logger: <IMAPServerLogger>imapLogger })
+    let server = new imapServer({ logger: imapLogger })
 
     // attach services
     server.handlerServices.onLogin = login(fastify)

@@ -205,22 +205,50 @@ class FastifyCompliantLogger {
 
 class IMAPServerLogger {
     logger: any
+
     constructor(logger: any) {
         this.logger = logger;
     }
 
-    info(msg: logMessage) {
-        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+    is_logMessage(object: any): object is logMessage {
+        return 'logMessage' in object;
+    }
+
+    info(msg: logMessage | string) {
+        let message: any
+        if (typeof msg == 'string') {
+            message = msg
+        } else if (this.is_logMessage(msg)) {
+            message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        } else {
+            return
+        }
         this.logger.info(message)
     }
 
-    warn(msg: logMessage) {
-        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+    warn(msg: logMessage | string) {
+        let message: any
+        if (typeof msg == 'string') {
+            message = msg
+        } else if (this.is_logMessage(msg)) {
+            message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        } else {
+            return
+        }
         this.logger.warn(message)
     }
 
-    error(msg: logMessage, error: Error | undefined = undefined) {
-        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+    error(msg: logMessage | string, error: Error | undefined = undefined) {
+        let message: any
+
+        if (typeof msg == 'string') {
+            message = msg
+        } else if (this.is_logMessage(msg)) {
+            message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        } else {
+            return
+        }
+
         if (!(error instanceof Error)) error = undefined
         if (error == undefined) {
             this.logger.error(message)
@@ -229,13 +257,27 @@ class IMAPServerLogger {
         }
     }
 
-    log(msg: logMessage) {
-        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+    log(msg: logMessage | string) {
+        let message: any
+        if (typeof msg == 'string') {
+            message = msg
+        } else if (this.is_logMessage(msg)) {
+            message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        } else {
+            return
+        }
         this.logger.warn(message)
     }
 
-    debug(msg: logMessage) {
-        let message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+    debug(msg: logMessage | string) {
+        let message: any
+        if (typeof msg == 'string') {
+            message = msg
+        } else if (this.is_logMessage(msg)) {
+            message = `IMAP: Session-${msg.sessionId} Tag-${msg.tag} ${msg.message}`
+        } else {
+            return
+        }
         this.logger.warn(message)
     }
 }
