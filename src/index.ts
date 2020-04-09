@@ -13,7 +13,7 @@ if (!validConf.valid) {
     process.exit(1)
 }
 
-const MUST_HAVE_ENV = ["DOMAIN", "JWT_SECRET", "SUPERADMIN_USERNAME", "SUPERADMIN_PASSWORD", "NODE_ENV", "SMTP_USER", "SMTP_PASSWORD"]
+const MUST_HAVE_ENV = ["DOMAIN", "JWT_SECRET", "SUPERADMIN_USERNAME", "SUPERADMIN_PASSWORD", "NODE_ENV", "SMTP_USER", "SMTP_PASSWORD", "PROCESS_NAME"]
 
 let missingEnv = false
 
@@ -27,6 +27,9 @@ MUST_HAVE_ENV.forEach(env => {
 if (missingEnv) {
     process.exit(1)
 }
+
+// Setup process name for easy lookup
+process.title = <string>process.env.PROCESS_NAME
 
 import * as os from 'os'
 import cluster from 'cluster'

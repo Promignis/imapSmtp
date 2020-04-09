@@ -51,8 +51,10 @@ const swaggerOption = {
             description: 'Email Server API Docs',
             version: '1.0.0'
         },
-        host: 'localhost',
-        schemes: ['http', 'https']
+        host: config.get("swagger.host") || 'localhost',
+        schemes: ['http', 'https'],
+        consumes: ['application/json', 'multipart/form-data'],
+        produces: ['application/json'],
     },
     exposeRoute: true
 }

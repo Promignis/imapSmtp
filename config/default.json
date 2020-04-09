@@ -33,14 +33,17 @@
     },
     "imap": {
         "logger": {
-            "logDirectory": "/home/logs/bizgaze/",
+            "logDirectory": "/home/logs/bizgaze/imap",
             "logFile": "imapServer.log",
             "rotationFrequency": "24h",
             "maxLogFilesNumber": null,
             "dateFormat": "YYYY-MM-DD-HH"
         },
         "server": {
-            "port": 993
+            "port": 4001
         }
+    },
+    "swagger": {
+        "host": "localhost"
     }
 }

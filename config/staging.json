@@ -1,0 +1,31 @@
+{
+    "db": {
+        "host": "bizgaze-shard-00-00-awswr.gcp.mongodb.net:27017,bizgaze-shard-00-01-awswr.gcp.mongodb.net:27017,bizgaze-shard-00-02-awswr.gcp.mongodb.net:27017",
+        "username": "test1",
+        "password": "123456qwerty",
+        "connection": {
+            "autoIndex": true
+        },
+        "attachmentdb": {
+            "host": "bizgaze-shard-00-00-awswr.gcp.mongodb.net:27017,bizgaze-shard-00-01-awswr.gcp.mongodb.net:27017,bizgaze-shard-00-02-awswr.gcp.mongodb.net:27017",
+            "username": "test1",
+            "password": "123456qwerty"
+        }
+    },
+    "logger": {
+        "logDirectory": "/home/bizgazemail/log",
+        "logFile": "server.log"
+    },
+    "imap": {
+        "logger": {
+            "logDirectory": "/home/bizgazemail/log/imap",
+            "logFile": "imapServer.log"
+        },
+        "server": {
+            "port": 993
+        }
+    },
+    "swagger": {
+        "host": "dsolitaire.in"
+    }
+}
