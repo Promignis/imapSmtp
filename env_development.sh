@@ -1,7 +1,7 @@
-export NODE_ENV="staging" # Can be either development or production. Configs are chosen based on this.
+export NODE_ENV="development" # Configs are chosen based on this.
 
 # Run multiple processes of Node 
-export MULTI_CORE="true"
+export MULTI_CORE="false"
 export MULTI_CORE_COUNT="2" #If this is not specified or 0 , then defaults to system cores
 
 export SUPERADMIN_USERNAME=super_admin
