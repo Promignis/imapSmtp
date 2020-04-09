@@ -10,4 +10,5 @@ export default async function start() {
     await startGrpcServer()
     httpLogger.info(`Starting IMAP server...`)
     await startIMAPServer()
+    console.log("Started all the services!!")
 }

@@ -165,9 +165,10 @@ export const startIMAPServer = async () => {
     // TODO: Check if any startup errors are properly handled
     promisify(imapServer.listen)
     try {
-        await imapServer.listen(4001, '0.0.0.0')
+        let port: number = config.get("imap.server.port")
+        await imapServer.listen(port, '0.0.0.0')
         started = true
-        server.log.info(`Secure IMAP Server started on 0.0.0.0:4001`)
+        server.log.info(`Secure IMAP Server started on 0.0.0.0:${port}`)
     } catch (err) {
         server.log.error('Error starting imap server', err)
         process.exit(1)
