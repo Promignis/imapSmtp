@@ -1,6 +1,9 @@
 import { CommandMeta } from './types'
 import { State } from './constants'
-import { login } from './handlers'
+import {
+    login,
+    capablity
+} from './handlers'
 
 
 const NOOP: CommandMeta = {
@@ -10,7 +13,8 @@ const NOOP: CommandMeta = {
 
 const CAPABLITY: CommandMeta = {
     state: [],
-    schema: [] // Empty array means it takes no arguments
+    schema: [], // Empty array means it takes no arguments
+    handler: capablity
 }
 
 const LOGIN: CommandMeta = {

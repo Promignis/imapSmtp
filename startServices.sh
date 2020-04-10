@@ -1,5 +1,11 @@
 #!/bin/bash
 
+bg=1
+
+if [[ $1 == "--nobg" ]]
+then
+    bg=0
+fi
 # Stop old services
 if [ "$PROCESS_NAME" == "" ]
 then
@@ -21,6 +27,13 @@ else
     export TEST=ttt
     # build and start
     echo "Starting services ($NODE_ENV)"
-    sudo -E npm run start
+    echo "$bg"
+    if [ $bg == 1 ]
+    then
+        echo "Starting in background."
+        sudo -E npm run start & exit
+    else
+        sudo -E npm run start
+    fi
 fi
 

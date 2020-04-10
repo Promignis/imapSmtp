@@ -132,8 +132,9 @@ export class IMAPCommand {
         let cmdMeta = commandList.get(this.command)
 
         // If command state is not an empty array or it does not have the current connection state 
-        // tat means this command can not be executed in the current state 
-        if (!(cmdMeta!.state.length != 0 || cmdMeta!.state.includes(this.connection.state))) {
+        // that means this command can not be executed in the current state 
+        let validInAllState: boolean = cmdMeta!.state.length == 0
+        if (!(validInAllState || (cmdMeta!.state.length != 0 && cmdMeta!.state.includes(this.connection.state)))) {
             this.connection.sendStatusResponse({
                 tag: this.tag,
                 type: IMAPResponseStatus.BAD,
@@ -198,7 +199,6 @@ export class IMAPCommand {
             // If no error, send the final status response
             this.connection.sendStatusResponse(res!)
         }
-
 
     }
 

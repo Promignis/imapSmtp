@@ -3,6 +3,23 @@ import { IMAPConnection } from './imapConnection'
 import { IMAPResponseStatus, State, IMAPResponseCode } from './constants'
 import { to } from './utils'
 
+export const capablity: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
+    conn.sendCapablity()
+    return {
+        tag: cmd.tag,
+        type: IMAPResponseStatus.OK,
+        info: `CAPABILITY completed`
+    }
+}
+
+export const noop: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
+    return {
+        tag: cmd.tag,
+        type: IMAPResponseStatus.OK,
+        info: `NOOP completed`
+    }
+}
+
 export const login: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
     let userName = (cmd.attributes[0].value || '').toString().trim()
     let password = (cmd.attributes[1].value || '').toString().trim()
