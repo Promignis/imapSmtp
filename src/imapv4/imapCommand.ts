@@ -80,10 +80,9 @@ export class IMAPCommand {
             // check if command is append , then size < MAX_MESSAGE_SIZE , else size < MAX_LITERAL_SIZE 
             if (this.command == 'APPEND' && line.expectedLiteralSize > MAX_MESSAGE_SIZE) {
                 // APPENDLIMIT response for too large messages
-                // TOOBIG: https://tools.ietf.org/html/rfc4469#section-4.2
                 this.connection.sendStatusResponse({
                     tag: this.tag,
-                    type: IMAPResponseStatus.NO,
+                    type: IMAPResponseStatus.BAD,
                     code: IMAPResponseCode.TOOBIG,
                     info: 'Literal too large'
                 })
@@ -93,8 +92,7 @@ export class IMAPCommand {
             if (this.command != 'APPEND' && line.expectedLiteralSize > MAX_LITERAL_SIZE) {
                 this.connection.sendStatusResponse({
                     tag: this.tag,
-                    type: IMAPResponseStatus.NO,
-                    code: IMAPResponseCode.TOOBIG,
+                    type: IMAPResponseStatus.BAD,
                     info: 'Literal too large'
                 })
                 return new Error(`Literal too large`)
