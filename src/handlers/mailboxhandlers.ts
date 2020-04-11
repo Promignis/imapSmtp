@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import { ServerError, HTTP_STATUS, INT_ERRORS } from '../errors'
 import { to } from '../utils'
+import { IMailboxDoc } from '../db/mailboxes'
 
 // In all handlers `this` is the fastify instance
 // The fastify instance used for the handler registration
@@ -40,17 +41,17 @@ export function getAllForUser(fastify: any): any {
         }
 
         let err: any
-        let mailboxes: any
+        let mailboxes: IMailboxDoc[] | undefined
 
         [err, mailboxes] = await to(fastify.services.mailboxService.findMailboxes({}, query))
         if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
-        if (mailboxes.length == 0) {
+        if (mailboxes!.length == 0) {
             replyCode = HTTP_STATUS.NOT_FOUND
         }
         // Build the payload 
-        mailboxes.forEach((mb: any) => {
+        mailboxes!.forEach((mb: any) => {
             resp.mailboxes.push({
                 id: mb._id.toString(),
                 name: mb.name,

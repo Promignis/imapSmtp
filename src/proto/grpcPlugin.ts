@@ -7,6 +7,7 @@ import { to } from '../utils'
 import { AttachmentInfo, FindQuery, UpdateQuery } from '../types/types'
 import { Transform } from 'stream'
 import { IMessage, IAttachment } from '../db/messages'
+import { IMailboxDoc } from '../db/mailboxes'
 
 async function setupGrpcServer(fastify: any, { }, done: Function) {
     const protoPath = path.join(process.cwd(), "src/proto/mail.proto")
@@ -175,13 +176,13 @@ function saveInbound(fastify: any) {
                 },
                 projection: '_id retention retentionTime uidNext modifyIndex'
             }
-            let mailboxResults: any
+            let mailboxResults: IMailboxDoc[] | undefined
             [err, mailboxResults] = await to(f.services.mailboxService.findMailboxes({}, mailboxQuery))
             if (err != null) {
                 fastify.log.error(`[Grpc/MailService/saveInbound] Unable to get address ${address}`, err)
                 throw new Error(`[Grpc/MailService/saveInbound] Unable to save email`)
             }
-            if (mailboxResults.length == 0) {
+            if (mailboxResults!.length == 0) {
                 fastify.log.error(`[Grpc/MailService/saveInbound] No documents found for: ${mailboxQuery}`)
                 throw new Error(`[Grpc/MailService/saveInbound] Unable to save email`)
             }
@@ -209,8 +210,8 @@ function saveInbound(fastify: any) {
 
             let newEmail: IMessage = {
                 rootId: null,
-                exp: mailboxResults[0].retention,
-                retentionDate: mailboxResults[0].retentionTime,
+                exp: mailboxResults![0].retention,
+                retentionDate: mailboxResults![0].retentionTime,
                 userRemoved: false,
                 idate: new Date(Date.now()),
                 size: mailData.size,
@@ -231,7 +232,7 @@ function saveInbound(fastify: any) {
                 cc: mailData.cc,
                 bcc: mailData.bcc,
                 rcpt: mailData.rcptTo,
-                mailbox: mailboxResults[0]._id,
+                mailbox: mailboxResults![0]._id,
                 user: userId,
                 address: addressId,
                 uid: 0, // Temp
@@ -240,8 +241,8 @@ function saveInbound(fastify: any) {
                 metadata: {}
             }
             // Start save message transaction
-            let currentModifyIndex = mailboxResults[0].modifyIndex
-            let currentUid = mailboxResults[0].uidNext
+            let currentModifyIndex = mailboxResults![0].modifyIndex
+            let currentUid = mailboxResults![0].uidNext
             let saveRes: any
             [err, saveRes] = await to(f.tx.messageTx.saveEmail(newEmail, currentModifyIndex, currentUid))
             if (err != null) {

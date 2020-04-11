@@ -7,6 +7,7 @@ import MailComposer from 'nodemailer/lib/mail-composer'
 import fs from 'fs'
 import util from 'util'
 import { smtpTransport } from '../smtpSender'
+import { IMailboxDoc } from '../db/mailboxes'
 const unlinkAsync = util.promisify(fs.unlink)
 // In all handlers `this` is the fastify instance
 // The fastify instance used for the handler registration
@@ -308,12 +309,12 @@ export function outboundMessage(fastify: any): any {
             },
             projection: '_id retention retentionTime uidNext modifyIndex'
         }
-        let mailboxResults: any
+        let mailboxResults: IMailboxDoc[] | undefined
         [err, mailboxResults] = await to(f.services.mailboxService.findMailboxes({}, mailboxQuery))
         if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
         }
-        if (mailboxResults.length == 0) {
+        if (mailboxResults!.length == 0) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `No documents found for: ${JSON.stringify(mailboxQuery)}`, INT_ERRORS.SERVER_ERR)
         }
 
@@ -415,8 +416,8 @@ export function outboundMessage(fastify: any): any {
         // create the mail and save it
         let newEmail: IMessage = {
             rootId: null,
-            exp: mailboxResults[0].retention,
-            retentionDate: mailboxResults[0].retentionTime,
+            exp: mailboxResults![0].retention,
+            retentionDate: mailboxResults![0].retentionTime,
             userRemoved: false,
             idate: new Date(Date.now()),
             size: mailSize,
@@ -437,7 +438,7 @@ export function outboundMessage(fastify: any): any {
             cc: recipients.cc,
             bcc: recipients.bcc,
             rcpt: [],
-            mailbox: mailboxResults[0]._id,
+            mailbox: mailboxResults![0]._id,
             user: user._id,
             address: addressId,
             uid: 0, // Temp
@@ -446,8 +447,8 @@ export function outboundMessage(fastify: any): any {
             metadata: {}
         }
 
-        let currentModifyIndex = mailboxResults[0].modifyIndex
-        let currentUid = mailboxResults[0].uidNext
+        let currentModifyIndex = mailboxResults![0].modifyIndex
+        let currentUid = mailboxResults![0].uidNext
         let saveRes: any
         [err, saveRes] = await to(f.tx.messageTx.saveEmail(newEmail, currentModifyIndex, currentUid))
         if (err != null) {

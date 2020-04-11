@@ -1,5 +1,4 @@
 import mongoose from "mongoose"
-import { db } from '../db/connection'
 import { to } from '../utils'
 import { HTTP_STATUS, ServerError, INT_ERRORS } from '../errors'
 import { IMailbox, IMailboxDoc } from '../db/mailboxes'
@@ -110,7 +109,7 @@ class MailboxService {
         return result
     }
 
-    async findMailboxes(ctx: ServiceContext, query: FindQuery, options?: object): Promise<any> {
+    async findMailboxes(ctx: ServiceContext, query: FindQuery, options?: object): Promise<IMailboxDoc[]> {
         let dbCallOptions: any = {}
         if (ctx.session) {
             dbCallOptions.session = ctx.session
@@ -119,7 +118,7 @@ class MailboxService {
         let projection: string | null = query.projection ? query.projection : null
 
         let err: any
-        let res: any
+        let res: IMailboxDoc[] | undefined
 
         [err, res] = await to(this.Mailbox.find(query.filter, projection, dbCallOptions).exec())
 
@@ -127,7 +126,7 @@ class MailboxService {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, err.name || INT_ERRORS.SERVER_ERR)
         }
 
-        return res
+        return res!
     }
 
     async updateMailboxes(ctx: ServiceContext, queryInfo: UpdateQuery, options?: Object): Promise<Number> {
