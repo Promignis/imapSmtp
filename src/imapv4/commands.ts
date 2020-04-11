@@ -1,15 +1,15 @@
 import { CommandMeta } from './types'
 import { State } from './constants'
-import {
-    login,
-    capablity,
-    list
-} from './handlers'
+import { login } from './handlers/login'
+import { capablity } from './handlers/capability'
+import { noop } from './handlers/noop'
+import { list } from './handlers/list'
 
 
 const NOOP: CommandMeta = {
     state: [], // If state array is empty , it means this command will work in all states
-    schema: []
+    schema: [],
+    handler: noop
 }
 
 const CAPABLITY: CommandMeta = {

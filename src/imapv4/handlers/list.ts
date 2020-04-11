@@ -1,76 +1,14 @@
 import {
-    CommandHandler
-    , ParsedCommand
-    , IMAPStatusResponse
-    , MailboxInfo
-    , onListOpts,
+    CommandHandler,
+    ParsedCommand,
+    IMAPStatusResponse,
+    onListOpts,
+    MailboxInfo,
     IMAPDataResponse
-} from './types'
-import { IMAPConnection } from './imapConnection'
-import { IMAPResponseStatus, State, IMAPResponseCode } from './constants'
-import { to } from './utils'
-
-export const capablity: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
-    conn.sendCapablity()
-    return {
-        tag: cmd.tag,
-        type: IMAPResponseStatus.OK,
-        info: `CAPABILITY completed`
-    }
-}
-
-export const noop: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
-    return {
-        tag: cmd.tag,
-        type: IMAPResponseStatus.OK,
-        info: `NOOP completed`
-    }
-}
-
-export const login: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
-    let userName = Buffer.from((cmd.attributes[0] && cmd.attributes[0].value) || '', 'binary').toString().trim()
-    let password = Buffer.from((cmd.attributes[1] && cmd.attributes[1].value) || '', 'binary').toString().trim()
-
-    // That means no service is attached. In this case return a bad response
-    if (conn._imapServer.handlerServices.onLogin == null) {
-        return {
-            tag: cmd.tag,
-            type: IMAPResponseStatus.BAD,
-            info: `Command ${cmd.command} not implemented`
-        }
-    }
-
-    let [err, res] = await to(conn._imapServer.handlerServices.onLogin(userName, password))
-
-    // Service failed
-    if (err != null) {
-        throw err
-    }
-
-    if (res!.success) {
-        // Login sucess
-        // Setup the session
-        conn.setSession(res!.session)
-        conn.setState(State.AUTH)
-
-        // Send capablities on successfull login
-        conn.sendCapablity()
-
-        return {
-            tag: cmd.tag,
-            type: IMAPResponseStatus.OK,
-            info: `${userName} Authenticated`
-        }
-    }
-
-    // Login Failed
-    return {
-        tag: cmd.tag,
-        type: IMAPResponseStatus.NO,
-        code: IMAPResponseCode.AUTHENTICATIONFAILED,
-        info: `Invalid Credentials`
-    }
-}
+} from '../types'
+import { IMAPConnection } from '../imapConnection'
+import { IMAPResponseStatus } from '../constants'
+import { to } from '../utils'
 
 export const list: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
     // Possible command formats
@@ -204,10 +142,9 @@ export const list: CommandHandler = async (conn: IMAPConnection, cmd: ParsedComm
         selectionParams: selection,
         returnParams: returnOptions
     }
-    let mailboxes: MailboxInfo[] | undefined
-    let err: Error | null
 
-    [err, mailboxes] = await to(conn._imapServer.handlerServices.onList(conn.session!, listParams))
+
+    let [err, mailboxes] = await to(conn._imapServer.handlerServices.onList(conn.session!, listParams))
 
     if (err != null) {
         throw err
@@ -246,7 +183,6 @@ export const list: CommandHandler = async (conn: IMAPConnection, cmd: ParsedComm
         listResponse.attributes.push(mailbox.path)
 
         // Send
-        console.log("sending ---", listResponse)
         conn.sendDataResponse(listResponse)
     })
 
