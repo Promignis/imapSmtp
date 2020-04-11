@@ -58,6 +58,7 @@ export interface ParsedCommand {
     attributes: any // This can be dynamic
 }
 
+// Node object inside command parser
 export interface Node {
     childNodes: Node[]
     type: string
@@ -131,12 +132,26 @@ export interface onLoginResp {
     session: IMAPSession
 }
 
+export interface MailboxInfo {
+    delimiter: string
+    path: string
+    specialUse?: string // refer rfc6154 for all valid values
+    mailboxAttributes?: string[] // Refer rfc5258 setion 1
+}
+
+export interface onListOpts {
+    reference: string
+    mailboxname: string
+    selectionParams: string[]
+    returnParams: string[]
+}
+
 export interface IMAPHandlerServices {
     // It will take in username and password and return if  authentication was successfull or not
     // and if it was then it will return the session object
     onLogin: ((username: string, password: string) => Promise<onLoginResp>) | null,
     onFetch: null,
-    onList: null,
+    onList: ((sess: IMAPSession, params: onListOpts) => Promise<MailboxInfo[]>) | null,
     onLsub: null,
     onSubscribe: null,
     onUnsubscribe: null,

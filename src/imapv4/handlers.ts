@@ -1,4 +1,11 @@
-import { CommandHandler, ParsedCommand, IMAPStatusResponse } from './types'
+import {
+    CommandHandler
+    , ParsedCommand
+    , IMAPStatusResponse
+    , MailboxInfo
+    , onListOpts,
+    IMAPDataResponse
+} from './types'
 import { IMAPConnection } from './imapConnection'
 import { IMAPResponseStatus, State, IMAPResponseCode } from './constants'
 import { to } from './utils'
@@ -52,7 +59,7 @@ export const login: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
         return {
             tag: cmd.tag,
             type: IMAPResponseStatus.OK,
-            info: `Authenticated`
+            info: `${userName} Authenticated`
         }
     }
 
@@ -79,7 +86,7 @@ export const list: CommandHandler = async (conn: IMAPConnection, cmd: ParsedComm
 
     // For a list of all supported attributes refer rfc6154 secion 2
     // For now we only support the following attributes 
-    const specialuseAttributes = [
+    const supportedSpecialUseAttributes = [
         '\\Drafts',
         '\\Sent',
         '\\Trash',
@@ -119,6 +126,9 @@ export const list: CommandHandler = async (conn: IMAPConnection, cmd: ParsedComm
     reference = Buffer.from((cmd.attributes[arrPos] && cmd.attributes[arrPos].value) || '', 'binary').toString()
     arrPos++
 
+    // As per rfc5258 mailbox name can be an array of patterns
+    // because of partial rfc5258 support we ignore patterns
+    // for ex. BBB LIST "" ("INBOX" "Drafts" "Sent/%") , pattern ("INBOX" "Drafts" "Sent/%") will be ignored
     mailboxName = Buffer.from((cmd.attributes[arrPos] && cmd.attributes[arrPos].value) || '', 'binary').toString()
     arrPos++;
 
@@ -186,5 +196,64 @@ export const list: CommandHandler = async (conn: IMAPConnection, cmd: ParsedComm
         }
     }
 
-    return <IMAPStatusResponse>{}
+    // Call the service 
+
+    let listParams: onListOpts = {
+        reference: reference,
+        mailboxname: mailboxName,
+        selectionParams: selection,
+        returnParams: returnOptions
+    }
+    let mailboxes: MailboxInfo[] | undefined
+    let err: Error | null
+
+    [err, mailboxes] = await to(conn._imapServer.handlerServices.onList(conn.session!, listParams))
+
+    if (err != null) {
+        throw err
+    }
+
+    // Process result
+    mailboxes!.forEach((mailbox: MailboxInfo) => {
+        let listResponse: IMAPDataResponse = {
+            command: commandName,
+            attributes: []
+        }
+
+        // Check if the special use attributes are in the list of supported values
+        if (mailbox.specialUse && supportedSpecialUseAttributes.includes(mailbox.specialUse)) {
+            // If the value is correct , then add it to the mailboxAttributes array
+            // If mailboxAttributes property was not provided by the service then create it
+            if (!mailbox.mailboxAttributes) {
+                mailbox['mailboxAttributes'] = [mailbox.specialUse]
+            } else {
+                mailbox.mailboxAttributes.push(mailbox.specialUse)
+            }
+        }
+
+        if (mailbox.mailboxAttributes && mailbox.mailboxAttributes.length != 0) {
+            listResponse.attributes.push(
+                mailbox.mailboxAttributes.map((att: string) => {
+                    return {
+                        type: 'atom',
+                        value: att
+                    }
+                })
+            )
+        }
+
+        listResponse.attributes.push("/")
+        listResponse.attributes.push(mailbox.path)
+
+        // Send
+        console.log("sending ---", listResponse)
+        conn.sendDataResponse(listResponse)
+    })
+
+    // List command successfully completed
+    return {
+        tag: cmd.tag,
+        type: IMAPResponseStatus.OK,
+        info: `${commandName} completed`
+    }
 }

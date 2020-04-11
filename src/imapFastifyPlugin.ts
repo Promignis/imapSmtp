@@ -1,6 +1,13 @@
 import fastifyPlugin from 'fastify-plugin'
-import { IMAPServer, onLoginResp, IMAPSession } from './imapv4'
+import {
+    IMAPServer,
+    onLoginResp,
+    IMAPSession,
+    onListOpts,
+    MailboxInfo
+} from './imapv4'
 import { IUser } from './db/users'
+import { IMailboxDoc, IMailbox } from './db/mailboxes'
 import { to } from './utils'
 import { imapLogger } from './logger'
 
@@ -11,7 +18,7 @@ async function setupIMAPServer(fastify: any, { }, done: Function) {
 
     // attach services
     server.handlerServices.onLogin = login(fastify)
-
+    server.handlerServices.onList = list(fastify)
     fastify.decorate('imapServer', server)
 
     done()
@@ -49,7 +56,8 @@ function login(fastify: any) {
             session: {
                 userUUID: userObj!.id,
                 sessionProps: {
-                    username: userObj!.username
+                    username: userObj!.username,
+                    address: userObj!.primeAddress
                 }
             }
         }
@@ -58,4 +66,100 @@ function login(fastify: any) {
     }
 }
 
+function list(fastify: any) {
+    return async function (session: IMAPSession, params: onListOpts): Promise<MailboxInfo[]> {
+
+        let userId = session.userUUID
+        let address = session.sessionProps.address
+
+        // We are not handling onListOpts.returnParams
+
+        let specialUseOnly: boolean = params.selectionParams && params.selectionParams.includes('SPECIAL-USE')
+
+        // Fetch all the mailboxes for the user
+        let q = {
+            filter: {
+                user: userId,
+                address: address
+            }
+        }
+
+        let mailboxes: IMailboxDoc[] | undefined
+        let err: Error | null
+
+        [err, mailboxes] = await to(fastify.services.mailboxService.findMailboxes({}, q))
+
+        if (err != null) {
+            throw err
+        }
+
+        // Filter out mailboxes
+        let path = params.reference + params.mailboxname
+        // Clean the value
+
+        // trim any trailing /
+        path = path.replace(/^\/|\/$/g, () => '');
+
+        // Normalize case insensitive INBOX to always use uppercase
+        let parts = path.split('/');
+        if (parts[0].toUpperCase() === 'INBOX') {
+            parts[0] = 'INBOX';
+        }
+        path = parts.join("/")
+
+        // We are going to convert this into a regex , so do the proper formatting
+        // ie. add escape for regex charecters
+        path = path
+            // remove excess * and %
+            .replace(/\*\*+/g, '*')
+            .replace(/%%+/g, '%')
+            // escape special regex characters
+            .replace(/([\\^$+?!.():=[\]|,-])/g, '\\$1')
+            // setup *
+            .replace(/[*]/g, '.*')
+            // setup %
+            .replace(/[%]/g, '[^/]*');
+
+        let regex = new RegExp('^' + path + '$', '')
+
+        let mailboxlist = mailboxes!.filter(mb => !!regex.test(mb.imapName))
+        let response: MailboxInfo[] = []
+        // Create response object
+
+        mailboxlist.forEach((mb: IMailboxDoc) => {
+            let m = <MailboxInfo>{}
+            if (specialUseOnly && !mb.specialUse) {
+                return
+            }
+
+            if (mb.specialUse) {
+                switch (mb.specialUse) {
+                    case "/Sent":
+                        m.specialUse = "\\Sent"
+                        break
+                    case "/Junk":
+                        m.specialUse = "\\Junk"
+                        break
+                    case "/Drafts":
+                        m.specialUse = "\\Drafts"
+                        break
+                    case "/Trash":
+                        m.specialUse = "\\Trash"
+                        break
+                }
+            }
+
+            m.delimiter = mb.delimiter
+            m.path = mb.imapName
+            // Right now all mailboxes have no children
+            // Later when functionality to add new mailboxes is added
+            // we will need to do more checks here
+            m.mailboxAttributes = ['\\HasNoChildren']
+
+            response.push(m)
+        })
+
+        return response
+    }
+}
 export const setupIMAPPlugin = fastifyPlugin(setupIMAPServer)
