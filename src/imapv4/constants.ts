@@ -6,8 +6,9 @@ export const MAX_MESSAGE_SIZE = 1 * 1024 * 1024 // This is needed to limit messa
 export const MAX_LITERAL_SIZE = 8 * 1024 // This is the max literal size for commands other than APPEND
 // const MAX_BAD_COMMANDS = 50;
 
+// Refer: rfc3501 section 3
 export enum State {
-    'AUTH', 'NOTAUTH', 'SELECTED'
+    'AUTH', 'NOTAUTH', 'SELECTED', 'LOGOUT'
 }
 
 // Refer rfc3501 section 7.1.

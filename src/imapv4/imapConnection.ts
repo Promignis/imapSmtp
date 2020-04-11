@@ -3,6 +3,7 @@ import { IMAPServer } from './imapServer'
 import { TLSSocket } from 'tls'
 import { State, MAX_MESSAGE_SIZE } from './constants'
 import { StreamHandler } from './streamHandler'
+import { imapCommandCompiler } from './imapCommandCompiler'
 import { IMAPStatusResponse, IMAPDataResponse, IMAPCommandContResponse, IMAPSession } from './types'
 
 const SOCKET_TIMEOUT = 60 * 1000 * 30 // 30 minutes
@@ -65,7 +66,8 @@ export class IMAPConnection extends EventEmitter {
 
         this._imapServer.logger.info(`${this.id}: Sending greeting!`)
 
-        // Send greeting
+        // Send OK greeting
+        // TODO: Bye greeting will be sent if too many connections
         this.send(`* OK ${process.env.DOMAIN} ready for requests from ${this.remoteAddress}`)
     }
 
@@ -172,13 +174,20 @@ export class IMAPConnection extends EventEmitter {
         } else {
             capabilities.push('ID')
             capabilities.push('UNSELECT')
-            capabilities.push('SPECIAL-USE') // // rfc6154
             capabilities.push('CONDSTORE') // rfc4551
             capabilities.push('ENABLE')
             capabilities.push(`APPENDLIMIT=${MAX_MESSAGE_SIZE}`)
-            // Can be added in future easily
+            capabilities.push('SPECIAL-USE') // refer rfc6154
+            // Capabilities that can be added in future easily
             // capabilities.push('UIDPLUS') // rfc4315 , adds UID EXPUNGE command
             // capabilities.push('UTF8=ACCEPT') // rfc6855
+            /** 
+             *  We are partially supporting LIST-EXTENDED by the supporting SPECIAL-USE
+             *  In future complete support can be added. If the backend does not support
+             *  some features then the command handler can ignore some arguments that rfc5258
+             *  define. For now not including it
+             * */
+            // capabilities.push('LIST-EXTENDED') // refer rfc5258
         }
 
         return capabilities
@@ -198,11 +207,17 @@ export class IMAPConnection extends EventEmitter {
 
         this._imapServer.logger.info(`${this.id}: TAG: ${tag} Status response sent ${JSON.stringify(resp)}`)
 
-        this.send(payload)
+        this.send(payload, cb)
     }
 
     sendDataResponse(resp: IMAPDataResponse, cb?: () => void) {
-        // TODO: Add Implemetation
+        if (!resp.tag) {
+            resp.tag = '*'
+        }
+        let payload = imapCommandCompiler(resp)
+
+        this._imapServer.logger.info(`${this.id}: TAG: ${resp.tag} Data response sent for ${resp.command} with payload : ${payload}`)
+        this.send(payload, cb)
     }
 
     sendCommandContResponse(resp: IMAPCommandContResponse, cb?: () => void) {

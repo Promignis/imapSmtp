@@ -1,6 +1,5 @@
 import fastifyPlugin from 'fastify-plugin'
-import imapServer from './imapv4'
-import { onLoginResp, IMAPSession, IMAPServerLogger } from './imapv4/index.d'
+import { IMAPServer, onLoginResp, IMAPSession } from './imapv4'
 import { IUser } from './db/users'
 import { to } from './utils'
 import { imapLogger } from './logger'
@@ -8,7 +7,7 @@ import { imapLogger } from './logger'
 async function setupIMAPServer(fastify: any, { }, done: Function) {
 
     // TODO: Add logger
-    let server = new imapServer({ logger: imapLogger })
+    let server = new IMAPServer({ logger: imapLogger })
 
     // attach services
     server.handlerServices.onLogin = login(fastify)

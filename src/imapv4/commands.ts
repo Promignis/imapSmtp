@@ -2,7 +2,8 @@ import { CommandMeta } from './types'
 import { State } from './constants'
 import {
     login,
-    capablity
+    capablity,
+    list
 } from './handlers'
 
 
@@ -59,6 +60,11 @@ const LIST: CommandMeta = {
     state: [State.AUTH, State.SELECTED],
     schema: [
         {
+            name: 'selection',
+            optional: true,
+            type: 'array'
+        },
+        {
             name: 'reference',
             optional: false,
             type: 'string'
@@ -67,8 +73,19 @@ const LIST: CommandMeta = {
             name: 'mailbox',
             optional: false,
             type: 'string'
-        }
-    ]
+        },
+        {
+            name: 'returncmd',
+            optional: true,
+            type: 'atom'
+        },
+        {
+            name: 'return',
+            optional: true,
+            type: 'array'
+        },
+    ],
+    handler: list
 }
 
 const LSUB: CommandMeta = {

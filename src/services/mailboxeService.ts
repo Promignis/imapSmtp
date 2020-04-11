@@ -16,7 +16,7 @@ class MailboxService {
     systemMailbox: any = [{
         name: "Inbox",
         imapName: "INBOX",
-        specialUse: null,
+        specialUse: null, // refer rfc6154
         path: "/", // This means its the root. Its children will have a path Inbox/work
         delimiter: "/"
     },

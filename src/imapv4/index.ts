@@ -1,3 +1,2 @@
-import { IMAPServer } from './imapServer'
-
-export default IMAPServer
+export { IMAPServer } from './imapServer'
+export * from './types'

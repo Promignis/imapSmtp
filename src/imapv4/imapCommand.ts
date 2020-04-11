@@ -124,8 +124,6 @@ export class IMAPCommand {
             return
         }
 
-        console.log(parsedVal)
-
         // Validate the state
         let cmdMeta = commandList.get(this.command)
 
@@ -155,6 +153,7 @@ export class IMAPCommand {
         let schema = cmdMeta!.schema
 
         // Argument Valdation
+        // TODO: Add type validations too.
         if (schema != null && schema.length != 0) {
             let maxArgs = schema.length
             let minArgs = schema.filter(item => !item.optional).length

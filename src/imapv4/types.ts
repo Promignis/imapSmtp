@@ -36,6 +36,22 @@ export interface ParserOpts {
     literals?: Buffer[]
 }
 
+// ParsedCommand.attributes property is typed as any, because it can be pretty dynamic
+// It is of form 
+/**
+ * {
+        tag: "TAG",
+        command: "COMMAND",
+        attributes: [
+            {type: "SEQUENCE", value: "sequence-set"},
+            {type: "ATOM", value: "atom", section:[section_elements], partial: [start, end]},
+            {type: "STRING", value: "string"},
+            {type: "LITERAL", value: "literal"},
+            [list_elements]
+        ]
+    }
+ */
+// The types that each parsed value can be are defined in rfc3501
 export interface ParsedCommand {
     command: string
     tag: string
@@ -91,7 +107,8 @@ export interface IMAPStatusResponse {
 
 export interface IMAPDataResponse {
     tag?: string
-    fields: any[]
+    command: string,
+    attributes: any // Can be dynamic (same as ParsedCommand.attributes)
 }
 
 export interface IMAPCommandContResponse {
