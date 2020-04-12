@@ -5,6 +5,7 @@ import { capablity } from './handlers/capability'
 import { noop } from './handlers/noop'
 import { list } from './handlers/list'
 import { select } from './handlers/select'
+import { unselect } from './handlers/unselect'
 
 
 const NOOP: CommandMeta = {
@@ -308,7 +309,8 @@ const CLOSE: CommandMeta = {
 
 const UNSELECT: CommandMeta = {
     state: [State.SELECTED],
-    schema: []
+    schema: [],
+    handler: unselect
 }
 
 const COPY: CommandMeta = {
