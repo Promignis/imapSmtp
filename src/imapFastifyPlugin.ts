@@ -24,6 +24,13 @@ async function setupIMAPServer(fastify: any, { }, done: Function) {
     done()
 }
 
+interface imapSession {
+    username: string | null,
+    address: string | null,
+    selectedMailbox: string | null
+
+}
+
 function login(fastify: any) {
     return async function (username: string, password: string): Promise<onLoginResp> {
         let resp: onLoginResp
@@ -51,14 +58,16 @@ function login(fastify: any) {
         }
 
         // Login was successful
+        let sess: imapSession = {
+            username: userObj!.username,
+            address: userObj!.primeAddress.toHexString(),
+            selectedMailbox: null
+        }
         resp = {
             success: true,
             session: {
                 userUUID: userObj!.id,
-                sessionProps: {
-                    username: userObj!.username,
-                    address: userObj!.primeAddress
-                }
+                sessionProps: sess
             }
         }
 
@@ -70,10 +79,10 @@ function list(fastify: any) {
     return async function (session: IMAPSession, params: onListOpts): Promise<MailboxInfo[]> {
 
         let userId = session.userUUID
-        let address = session.sessionProps.address
+        let sess = <imapSession>session.sessionProps
+        let address = sess.address
 
         // We are not handling onListOpts.returnParams
-
         let specialUseOnly: boolean = params.selectionParams && params.selectionParams.includes('SPECIAL-USE')
 
         // Fetch all the mailboxes for the user

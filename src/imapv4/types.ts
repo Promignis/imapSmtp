@@ -92,6 +92,9 @@ export type RespCode = 'ALERT'
     | 'TOOBIG' //rfc4469
     | 'AUTHENTICATIONFAILED' //rfc5530
     | 'SERVERBUG' //rfc5530
+    | 'NONEXISTENT' // rfc5330
+    | 'READ-WRITE' // rfc3501 section 6.3
+    | 'READ-ONLY' // rfc3501 section 6.3
 
 //Server responses are in three forms: status responses, server data, and command continuation request
 export interface IMAPStatusResponse {
@@ -145,6 +148,43 @@ export interface onListOpts {
     returnParams: string[]
 }
 
+// Refer rfc3501 section 6.3.1 
+export interface onSelectResp {
+    flags: string[],
+    // The number of messages in the mailbox
+    exists: number,
+    // The number of messages in the mailbox with \Recent flag
+    recent: number,
+    // The message sequence number of the first unseen message in the mailbox, 
+    // If this is missing, the client can not make any assumptions about the first unseen message in the mailbox,
+    // and needs to issue a SEARCH command if it wants to find it.
+    unseen?: number,
+    /**
+     * A list of message flags that the client can change permanently. 
+     * If this is missing, the client should 
+     * assume that all flags can be changed permanently.
+     */
+    permanentFlags?: string[],
+    // The next unique identifier value (refer rfc3501)
+    // If this is missing, the client can not make any assumptions about the next unique identifier value.
+    uidNext?: number,
+    // The unique identifier validity value (refer rfc3501)
+    // If this is missing, the server does not support unique identifiers
+    uidValidity?: number,
+    // If not passed value is set to 0 by default 
+    // 0 value means the server doesn't support the persistent
+    // storage of mod-sequences for the mailbox 
+    // refer rfc4551 section 3.6
+    HIGHESTMODSEQ?: number
+    // If read only then no change can be made to the mailbox, like running STORE command etc.
+    // If not passed , it takes the default value false
+    readOnly?: boolean
+    // If the service wants it can update the session object to persist mailbox data
+    // current session data will be updated with this value
+    // the updated value will be passed to it later when commands like SEARCH , FETCH etc.. are called
+    updatedSession: IMAPSession
+}
+
 export interface IMAPHandlerServices {
     // It will take in username and password and return if  authentication was successfull or not
     // and if it was then it will return the session object
@@ -157,7 +197,7 @@ export interface IMAPHandlerServices {
     onCreate: null,
     onRename: null,
     onDelete: null,
-    onOpen: null,
+    onSelect: ((sess: IMAPSession, mailboxname: string) => Promise<onSelectResp | null>) | null,
     onStatus: null,
     onAppend: null,
     onStore: null,

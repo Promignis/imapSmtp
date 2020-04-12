@@ -61,7 +61,7 @@ export class IMAPServer extends EventEmitter {
             onCreate: null,
             onRename: null,
             onDelete: null,
-            onOpen: null,
+            onSelect: null,
             onStatus: null,
             onAppend: null,
             onStore: null,

@@ -171,6 +171,11 @@ const SELECT: CommandMeta = {
             name: 'mailbox',
             optional: false,
             type: 'string'
+        },
+        {
+            name: 'extensions',
+            optional: true,
+            type: 'array'
         }
     ]
 }

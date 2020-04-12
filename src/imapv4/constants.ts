@@ -58,6 +58,16 @@ export const IMAPResponseCode: { [key: string]: RespCode } = {
     READ_ONLY: 'READ-ONLY',
     TOOBIG: 'TOOBIG',
     AUTHENTICATIONFAILED: 'AUTHENTICATIONFAILED',
-    SERVERBUG: 'SERVERBUG'
+    SERVERBUG: 'SERVERBUG',
+    NONEXISTENT: 'NONEXISTENT',
+    ['READ-WRITE']: "READ-WRITE",
+    ['READ-ONLY']: "READ-ONLY"
 }
+
+export const supportedSystemFlags = [
+    '\\Seen',
+    '\\Draft',
+    '\\Flagged',
+    '\\Deleted'
+]
 

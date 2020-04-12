@@ -26,13 +26,16 @@ export class IMAPConnection extends EventEmitter {
     state: State
     // Selected Mailbox metadata
     selected: boolean;
-    selectedMailboxData: any //TODO: Type it
+    selectedMailboxData: any | null //TODO: Type it
     // current session metadata , for eg. logged in user etc
     session: IMAPSession | null
     // Resolved hostname for remote IP address
     clientHostName: string
     // This will read the incoming tcp strem and extract commands
     streamHandler: StreamHandler
+    // indicates if CONDSTORE is enabled for the session
+    // Refer rfc4551 section 3.7
+    condstoreEnabled: boolean
 
     constructor(soc: TLSSocket, server: IMAPServer, id: string) {
         super()
@@ -43,9 +46,10 @@ export class IMAPConnection extends EventEmitter {
         this.remoteAddress = this._socket.remoteAddress || ''
         // All connections start in a Not Authenticated state
         this.state = State.NOTAUTH
+        this.condstoreEnabled = false
         this.session = null
         this.selected = false
-        this.selectedMailboxData = {}
+        this.selectedMailboxData = null
         this.clientHostName = ""
         this._closed = false
         this._closing = false
