@@ -154,7 +154,7 @@ export interface onSelectResp {
     // The number of messages in the mailbox
     exists: number,
     // The number of messages in the mailbox with \Recent flag
-    recent: number,
+    recent?: number,
     // The message sequence number of the first unseen message in the mailbox, 
     // If this is missing, the client can not make any assumptions about the first unseen message in the mailbox,
     // and needs to issue a SEARCH command if it wants to find it.

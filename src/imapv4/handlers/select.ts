@@ -96,9 +96,12 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
          */
 
         // Flags -  * FLAGS (\Flagged \Draft \Deleted \Seen)
-        let flags = resp.flags.filter((f: string) => {
+        let flags: any[] = resp.flags.filter((f: string) => {
             return supportedSystemFlags.includes(f)
-        })
+        }).map((f) => ({
+            type: 'atom',
+            value: f
+        }))
 
         let flagResp: IMAPDataResponse = {
             command: 'FLAG',
@@ -107,6 +110,14 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         conn.sendDataResponse(flagResp)
 
         // * OK [PERMANENTFLAGS (\Flagged \Draft \Deleted \Seen)] Flags permitted
+        let permFlags: any[] = resp.permanentFlags || []
+        permFlags = permFlags.filter((f: string) => {
+            return supportedSystemFlags.includes(f)
+        }).map((f) => ({
+            type: 'atom',
+            value: f
+        }))
+
         let permFlagResp: IMAPDataResponse = {
             command: 'OK',
             attributes: [
@@ -117,7 +128,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
                             type: 'atom',
                             value: 'PERMANENTFLAGS'
                         },
-                        flags
+                        permFlags
                     ]
                 },
                 {
@@ -142,8 +153,8 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
                                 value: 'UIDVALIDITY'
                             },
                             {
-                                type: 'atom',
-                                value: resp.uidValidity
+                                type: 'text',
+                                value: String(resp.uidValidity)
                             }
                         ]
                     },
@@ -155,7 +166,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
             }
             conn.sendDataResponse(uidValidityResp)
 
-            if (resp.uidNext) {
+            if (resp.uidNext != undefined) {
                 let uidNextResp: IMAPDataResponse = {
                     command: 'OK',
                     attributes: [
@@ -167,8 +178,8 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
                                     value: 'UIDNEXT'
                                 },
                                 {
-                                    type: 'atom',
-                                    value: resp.uidNext
+                                    type: 'text',
+                                    value: String(resp.uidNext)
                                 }
                             ]
                         },
@@ -188,7 +199,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
             attributes: [
                 {
                     type: 'text',
-                    value: resp.exists
+                    value: String(resp.exists)
                 },
                 {
                     type: 'atom',
@@ -199,13 +210,14 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         conn.sendDataResponse(exixtsResp)
 
         // * 0 UNSEEN
-        if (resp.unseen) {
+        // Send this only if service has returned an unseen value
+        if (resp.unseen != undefined) {
             let exixtsResp: IMAPDataResponse = {
                 command: '',
                 attributes: [
                     {
                         type: 'text',
-                        value: resp.unseen
+                        value: String(resp.unseen)
                     },
                     {
                         type: 'atom',
@@ -224,7 +236,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
             attributes: [
                 {
                     type: 'text',
-                    value: recent
+                    value: String(recent)
                 },
                 {
                     type: 'atom',
@@ -248,7 +260,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
                         },
                         {
                             type: 'atom',
-                            value: modseq
+                            value: String(modseq)
                         }
                     ]
                 },

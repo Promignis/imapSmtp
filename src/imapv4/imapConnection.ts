@@ -203,8 +203,8 @@ export class IMAPConnection extends EventEmitter {
     // of form TAG STATUS [CODE ARGS]? INFO?
     sendStatusResponse(resp: IMAPStatusResponse, cb?: () => void) {
 
-        let args = resp.args ? `${resp.args.length != 0 ? resp.args.join(' ') : ''}` : ''
-        let code = resp.code ? ` [${resp.code} ${args}]` : ''
+        let args = resp.args ? `${resp.args.length != 0 ? ' ' + resp.args.join(' ') : ''}` : ''
+        let code = resp.code ? ` [${resp.code}${args}]` : ''
         let info = resp.info ? ` ${resp.info}` : ''
         let tag = resp.tag || '*'
         let payload = `${tag} ${resp.type}${code}${info}`

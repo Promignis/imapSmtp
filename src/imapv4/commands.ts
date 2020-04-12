@@ -4,6 +4,7 @@ import { login } from './handlers/login'
 import { capablity } from './handlers/capability'
 import { noop } from './handlers/noop'
 import { list } from './handlers/list'
+import { select } from './handlers/select'
 
 
 const NOOP: CommandMeta = {
@@ -177,7 +178,8 @@ const SELECT: CommandMeta = {
             optional: true,
             type: 'array'
         }
-    ]
+    ],
+    handler: select
 }
 
 const EXAMINE: CommandMeta = {

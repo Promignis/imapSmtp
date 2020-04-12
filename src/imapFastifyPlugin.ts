@@ -4,7 +4,8 @@ import {
     onLoginResp,
     IMAPSession,
     onListOpts,
-    MailboxInfo
+    MailboxInfo,
+    onSelectResp
 } from './imapv4'
 import { IUser } from './db/users'
 import { IMailboxDoc, IMailbox } from './db/mailboxes'
@@ -12,13 +13,12 @@ import { to } from './utils'
 import { imapLogger } from './logger'
 
 async function setupIMAPServer(fastify: any, { }, done: Function) {
-
-    // TODO: Add logger
     let server = new IMAPServer({ logger: imapLogger })
 
     // attach services
     server.handlerServices.onLogin = login(fastify)
     server.handlerServices.onList = list(fastify)
+    server.handlerServices.onSelect = select(fastify)
     fastify.decorate('imapServer', server)
 
     done()
@@ -155,6 +155,63 @@ function list(fastify: any) {
 
             response.push(m)
         })
+
+        return response
+    }
+}
+
+function select(fastify: any) {
+    return async function (session: IMAPSession, mailboxname: string): Promise<onSelectResp | null> {
+
+        let userId = session.userUUID
+        let sess = <imapSession>session.sessionProps
+        let address = sess.address
+
+        let q = {
+            filter: {
+                user: userId,
+                address: address,
+                imapName: mailboxname
+            }
+        }
+
+        let mailboxes: IMailboxDoc[] | undefined
+        let err: Error | null
+        [err, mailboxes] = await to(fastify.services.mailboxService.findMailboxes({}, q))
+
+        if (err != null) {
+            throw err
+        }
+
+        // It should return just one result for the given combination query
+        // If its more or less than one then return null
+        if (mailboxes!.length != 1) {
+            return null
+        }
+
+        let mailbox = mailboxes![0]
+        let flags = [
+            '\\Seen',
+            '\\Draft',
+            '\\Flagged',
+            '\\Deleted'
+        ]
+        // Updated session
+        sess.selectedMailbox = mailbox._id.toHexString()
+        session.sessionProps = sess
+
+        //Recent is not supported by the backend
+        let response: onSelectResp = {
+            flags: flags,
+            exists: mailbox.stats.total,
+            unseen: mailbox.stats.unseen,
+            permanentFlags: flags,
+            uidNext: mailbox.uidNext,
+            uidValidity: mailbox.uidValidity,
+            HIGHESTMODSEQ: mailbox.modifyIndex,
+            readOnly: false,
+            updatedSession: session
+        }
 
         return response
     }
