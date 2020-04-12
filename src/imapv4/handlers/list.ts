@@ -8,7 +8,7 @@ import {
 } from '../types'
 import { IMAPConnection } from '../imapConnection'
 import { IMAPResponseStatus } from '../constants'
-import { to } from '../utils'
+import { to, normalizeMailboxName } from '../utils'
 
 export const list: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
     // Possible command formats
@@ -135,10 +135,10 @@ export const list: CommandHandler = async (conn: IMAPConnection, cmd: ParsedComm
     }
 
     // Call the service 
+    let fullPath = normalizeMailboxName(reference + mailboxName)
 
     let listParams: onListOpts = {
-        reference: reference,
-        mailboxname: mailboxName,
+        mailboxname: fullPath,
         selectionParams: selection,
         returnParams: returnOptions
     }

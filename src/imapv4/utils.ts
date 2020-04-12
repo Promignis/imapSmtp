@@ -20,3 +20,19 @@ export function generateRandomString(length: number): string {
     // TODO: Add a more sphisticated lib to do this?
     return crypto.randomBytes(Math.ceil(length * 0.5)).toString('hex').slice(0, length);
 }
+
+export function normalizeMailboxName(mailboxname: string): string {
+    // trim slashes
+    mailboxname = mailboxname.replace(/^\/|\/$/g, () => '')
+
+    // Normalize case insensitive INBOX to always use uppercase
+    let parts = mailboxname.split('/')
+
+    if (parts[0].toUpperCase() === 'INBOX') {
+        parts[0] = 'INBOX';
+    }
+
+    mailboxname = parts.join('/')
+
+    return mailboxname
+}

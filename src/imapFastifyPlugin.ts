@@ -93,19 +93,7 @@ function list(fastify: any) {
             throw err
         }
 
-        // Filter out mailboxes
-        let path = params.reference + params.mailboxname
-        // Clean the value
-
-        // trim any trailing /
-        path = path.replace(/^\/|\/$/g, () => '');
-
-        // Normalize case insensitive INBOX to always use uppercase
-        let parts = path.split('/');
-        if (parts[0].toUpperCase() === 'INBOX') {
-            parts[0] = 'INBOX';
-        }
-        path = parts.join("/")
+        let path = params.mailboxname
 
         // We are going to convert this into a regex , so do the proper formatting
         // ie. add escape for regex charecters

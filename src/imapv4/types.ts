@@ -140,7 +140,6 @@ export interface MailboxInfo {
 }
 
 export interface onListOpts {
-    reference: string
     mailboxname: string
     selectionParams: string[]
     returnParams: string[]
