@@ -8,11 +8,7 @@ import { IMAPConnection } from '../imapConnection'
 
 export const unselect: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
 
-    // reset connection state to auth
-    conn.state = State.AUTH
-    // Reset selected state
-    conn.selected = false
-    conn.selectedMailboxData = null
+    conn.resetSelectedState()
 
     return {
         tag: cmd.tag,

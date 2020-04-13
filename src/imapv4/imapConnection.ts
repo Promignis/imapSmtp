@@ -197,6 +197,14 @@ export class IMAPConnection extends EventEmitter {
         return capabilities
     }
 
+    resetSelectedState() {
+        // reset connection state to auth
+        this.state = State.AUTH
+        // Reset selected state
+        this.selected = false
+        this.selectedMailboxData = null
+    }
+
 
     // Send response back to client
 

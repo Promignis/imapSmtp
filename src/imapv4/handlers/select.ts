@@ -46,9 +46,8 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         // if a mailbox is already selected and a SELECT command that
         // fails is attempted, no mailbox is selected.
         // Reset the connection state
-        conn.state = State.AUTH
-        conn.selected = false
-        conn.selectedMailboxData = null
+        conn.resetSelectedState()
+
         throw err
     }
 
@@ -58,9 +57,8 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         // if a mailbox is already selected and a SELECT command that
         // fails is attempted, no mailbox is selected.
         // Reset the connection state
-        conn.state = State.AUTH
-        conn.selected = false
-        conn.selectedMailboxData = null
+        conn.resetSelectedState()
+
 
         return {
             tag: cmd.tag,
