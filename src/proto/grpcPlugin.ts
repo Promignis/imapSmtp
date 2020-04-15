@@ -8,6 +8,8 @@ import { AttachmentInfo, FindQuery, UpdateQuery } from '../types/types'
 import { Transform } from 'stream'
 import { IMessage, IAttachment } from '../db/messages'
 import { IMailboxDoc } from '../db/mailboxes'
+//@ts-ignore
+import { createIMAPBodyStructure, createIMAPEnvelop } from '../../rfc822'
 
 async function setupGrpcServer(fastify: any, { }, done: Function) {
     const protoPath = path.join(process.cwd(), "src/proto/mail.proto")
@@ -208,6 +210,18 @@ function saveInbound(fastify: any) {
 
             let messageId: string = mailData.parsedHeaders['message-id'].trim()
 
+            let mimeTree: any
+            try {
+                mimeTree = JSON.parse(mailData.stringifiedMimeTree)
+            } catch (err) {
+                fastify.log.error(`[Grpc/MailService/saveInbound] Unable to parse mime tree`, err)
+                throw new Error(`[Grpc/MailService/saveInbound] Unable to save email`)
+            }
+            let imapBodyStr = createIMAPBodyStructure(mimeTree)
+            let imapEnv = createIMAPEnvelop(mimeTree.parsedHeader || {})
+            let text = mailData.text
+            let html = mailData.html
+
             let newEmail: IMessage = {
                 rootId: null,
                 exp: mailboxResults![0].retention,
@@ -226,7 +240,11 @@ function saveInbound(fastify: any) {
                     starred: false,
                     important: false
                 },
-                body: mailData.body,
+                body: mimeTree,
+                imapBodyStructure: imapBodyStr,
+                imapEnvelope: imapEnv,
+                text,
+                html,
                 from: mailData.from,
                 to: mailData.to,
                 cc: mailData.cc,
@@ -249,6 +267,7 @@ function saveInbound(fastify: any) {
                 fastify.log.error(`[Grpc/MailService/saveInbound] Save mail transaction failed`, err)
                 throw new Error(`[Grpc/MailService/saveInbound] Unable to save email`)
             }
+            fastify.log.info(`[Grpc/MailService/saveInbound] Save mail transaction success (${saveRes}) for address:${addressId}, user:${userId}`)
         }
         ctx.res = {} // Empty
     }

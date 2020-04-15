@@ -7,14 +7,16 @@ function setMultipart(req: any, done: Function) {
     done()
 }
 
+// Handle attachment upload
 function fileHandler(fastify: any, opts: any, done: Function) {
     fastify.addContentTypeParser('multipart', setMultipart)
 
     let options = {
-        limits: { fileSize: 2 * 1024 * 1024 }, // MAX file size
+        limits: { fileSize: 10 * 1024 * 1024 }, // MAX file size
         useTempFiles: true,
         tempFileDir: '/tmp/bizgaze'
     }
+
     fastify.use(fileUpload(options))
 
     fastify.addHook('preValidation', (request: any, reply: any, done: Function) => {

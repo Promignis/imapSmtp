@@ -16,18 +16,6 @@ export interface IAttachment {
     size: number
 }
 
-export interface IBody {
-    headers: object,
-    isHTML: boolean,
-    contentType: {
-        value: string
-        params: Object,
-    },
-    bodyEncoding: string,
-    bodyContent: string,
-    children: Array<Body>
-}
-
 export interface IRcpt {
     original: string,
     originalHost: string,
@@ -53,7 +41,11 @@ export interface IMessage {
         starred: boolean,
         important: boolean
     },
-    body: IBody,
+    body: object,
+    imapBodyStructure: object,
+    imapEnvelope: object,
+    text: string,
+    html: Array<string>,
     from: Array<string>,
     to: Array<string>,
     cc: Array<string>,
@@ -106,17 +98,11 @@ var messageSchema = new Schema({
         starred: { type: Boolean, required: true },
         important: { type: Boolean, required: true },
     },
-    body: {
-        headers: { type: Object },
-        isHTML: { type: Boolean, required: true },
-        contentType: {
-            value: { type: String, required: true },
-            params: { type: Object },
-        },
-        bodyEncoding: { type: String },
-        bodyContent: { type: String },
-        children: { type: Array, required: true }
-    },
+    body: { type: Object, required: true },
+    imapBodyStructure: { type: Object, required: true },
+    imapEnvelope: { type: Object, required: true },
+    text: { type: String, required: true },
+    html: { type: Array },
     from: { type: Array, required: true },
     to: { type: Array, required: true },
     cc: { type: Array, required: true },

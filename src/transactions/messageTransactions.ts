@@ -102,8 +102,10 @@ export class MessageTX {
         let existingThread: IThreadDoc
         let threadFound: boolean = true
         let messageId: string = email.messageId
+        // If no subject was passed , this header will be undefined
+        // check for that , if found clean it up
         // Cleans up prefixes that other MTAs would have applied, example: Fwd:Subject, re;subject, [re]Subject etc.
-        let cleanedSubject = <string>parsedHeaders['subject'].replace(/([\[\(] *)?(RE|FWD|re|fwd|Re|Fwd?) *([-:;)\]][ :;\])-]*|$)|\]+ *$/, "")
+        let cleanedSubject: string = parsedHeaders['subject'] && parsedHeaders['subject'].replace(/([\[\(] *)?(RE|FWD|re|fwd|Re|Fwd?) *([-:;)\]][ :;\])-]*|$)|\]+ *$/, "") || ""
         let newReferenceArray: string[] = [messageId]
         let threadId: any = null
 
@@ -132,13 +134,19 @@ export class MessageTX {
             })
 
             // Try to find an existing thread that might have these references
+            let filter: any = {
+                user: email.user,
+                address: email.address,
+                references: { $in: newReferenceArray }
+            }
+
+            // If subject is not "" , add it to the filter
+            if (cleanedSubject) {
+                filter['subject'] = cleanedSubject
+            }
+
             let threadfilter: FindQuery = {
-                filter: {
-                    user: email.user,
-                    address: email.address,
-                    subject: cleanedSubject,
-                    references: { $in: newReferenceArray }
-                }
+                filter
             }
             let err: any
             let threadRes: any
@@ -162,7 +170,7 @@ export class MessageTX {
             let newThread: IThread = {
                 user: email.user,
                 address: email.address,
-                subject: cleanedSubject,
+                subject: cleanedSubject || null,
                 references: newReferenceArray,
                 metadata: {}
             }

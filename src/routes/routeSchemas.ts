@@ -142,9 +142,10 @@ export const getPaginatedMessagesSchema = {
                     items: {
                         type: 'object',
                         properties: {
-                            a: { type: 'string' },
                             _id: { type: 'string' },
                             body: { type: 'object', additionalProperties: true },
+                            html: { type: 'array', items: { type: 'string' } },
+                            text: { type: 'string' },
                             from: { type: 'array', items: { type: 'string' } },
                             to: { type: 'array', items: { type: 'string' } },
                             cc: { type: 'array', items: { type: 'string' } },
@@ -204,6 +205,8 @@ export const getThreadedMessagesSchema = {
                         properties: {
                             _id: { type: 'string' },
                             body: { type: 'object', additionalProperties: true },
+                            html: { type: 'array', items: { type: 'string' } },
+                            text: { type: 'string' },
                             from: { type: 'array', items: { type: 'string' } },
                             to: { type: 'array', items: { type: 'string' } },
                             cc: { type: 'array', items: { type: 'string' } },

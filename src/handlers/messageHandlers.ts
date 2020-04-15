@@ -8,6 +8,10 @@ import fs from 'fs'
 import util from 'util'
 import { smtpTransport } from '../smtpSender'
 import { IMailboxDoc } from '../db/mailboxes'
+
+//@ts-ignore
+import { createIMAPBodyStructure, createIMAPEnvelop, parseMIME, getLength, extractMailData } from '../../rfc822'
+
 const unlinkAsync = util.promisify(fs.unlink)
 // In all handlers `this` is the fastify instance
 // The fastify instance used for the handler registration
@@ -393,26 +397,39 @@ export function outboundMessage(fastify: any): any {
 
         // Get mail size (without attachments)
         let hasAttachments = false
-        let rfc822Mail: any = new MailComposer(composeOpts).compile()
-        let messageBuff: any
-        [err, messageBuff] = await to(rfc822Mail.build())
-        if (err != null) {
-            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
-        }
-        let mailSize = messageBuff.length
 
         // If attachments add attachments and get a new rfc822 email
         if (composeOptsAttachment.length != 0) {
             hasAttachments = true
-            composeOpts['attachments'] = composeOptsAttachment;
-            rfc822Mail = new MailComposer(composeOpts).compile()
+            composeOpts['attachments'] = composeOptsAttachment
+        }
+        // Build rfc822 raw email
+        // MailComposer does not add subject header if subject passed was an empty string, ie. ""
+        let compiled = new MailComposer(composeOpts).compile()
+        let parsed = _parseComiledMail(compiled)
+
+        let rfc822Mail: any
+        [err, rfc822Mail] = await to(compiled.build())
+        if (err != null) {
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
         }
 
-        let parsed = _parseComiledMail(rfc822Mail)
 
+        let mimeTree: any = parseMIME(rfc822Mail)
+
+        let mailData: any = extractMailData(mimeTree, true)
+        let attachmentMap: any = {}
+        for (let i = 0; i < mailData.length; i++) {
+            // let file = await create(bucket, nodes[i])
+            attachmentMap[mailData.nodes[i].attachmentId] = attachments[i].fileId
+        }
+        let imapBodyStr = createIMAPBodyStructure(mimeTree)
+        let mailSize = getLength(mimeTree, true)
+        let imapEnv = createIMAPEnvelop(mimeTree.parsedHeader || {})
+        let mailText = mailData.text
+        let mailHTML = mailData.html
         // update the message-id that was generated
         composeOpts['messageId'] = parsed.messageId;
-
         // create the mail and save it
         let newEmail: IMessage = {
             rootId: null,
@@ -432,7 +449,11 @@ export function outboundMessage(fastify: any): any {
                 starred: false,
                 important: false
             },
-            body: parsed.parsedBody,
+            body: mimeTree,
+            imapBodyStructure: imapBodyStr,
+            imapEnvelope: imapEnv,
+            text: mailText,
+            html: mailHTML,
             from: [from],
             to: recipients.to,
             cc: recipients.cc,
@@ -513,81 +534,11 @@ function _parseCompiledHeaders(headers: any, lowercase: boolean = false) {
     return parsed
 }
 
-function _parseBody(compiled: any) {
-
-    let mainHeader = _parseCompiledHeaders(compiled._headers)
-
-    let body = {
-        children: [],
-        isHTML: false,
-        contentType: {
-            value: mainHeader['Content-Type'],
-            params: {}
-        },
-        bodyEncoding: compiled.textEncoding,
-        bodyContent: compiled._isPlainText ? compiled.content : "",
-        headers: {
-            contentType: null,
-            contentDescription: null,
-            contentDisposition: null,
-            contentTransferEncoding: "",
-            contentId: "",
-            root: true
-        }
-    }
-
-    if (compiled._isPlainText && compiled.childNodes.length == 0) {
-        return body
-    } else {
-        let children = compiled.childNodes.map((n: any) => addChildren(n))
-        body.children = children
-        return body
-    }
-
-    function addChildren(compiledbody: any) {
-        let h = _parseCompiledHeaders(compiledbody._headers)
-        let isHTML = h['Content-Type'] == 'text/html'
-        let contentType = {
-            value: h['Content-Type'],
-            params: {}
-        }
-        let bodyEncoding = compiled.textEncoding
-        let bodyContent = compiled._isPlainText ? compiled.content : ""
-        let headers = {
-            contentType: h['Content-Type'] ? {
-                value: h['Content-Type'],
-                params: {}
-            } : null,
-            contentDescription: h['Content-Description'] ? {
-                value: h['Content-Type'],
-                params: {}
-            } : null,
-            contentDisposition: h['Content-Disposition'] ? {
-                value: h['Content-Type'],
-                params: {}
-            } : null,
-            contentTransferEncoding: "",
-            contentId: "",
-            root: false
-        }
-        let children = compiledbody.childNodes.map((n: any) => addChildren(n))
-        return {
-            isHTML,
-            contentType,
-            bodyEncoding,
-            bodyContent,
-            headers,
-            children
-        }
-    }
-}
-
 function _parseComiledMail(compiled: any) {
-    let parsedBody = _parseBody(compiled)
     let parsedHeaders = _parseCompiledHeaders(compiled._headers, true)
     let messageId = compiled.messageId()
     return {
-        parsedBody,
+        // parsedBody,
         parsedHeaders,
         messageId
     }

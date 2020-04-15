@@ -93,6 +93,8 @@ class MessageService {
             flags: 1,
             body: 1,
             thread: 1,
+            text: 1,
+            html: 1
         }
 
         let paginationParams: any = {

@@ -7,7 +7,7 @@ const modelName = "Thread"
 export interface IThread {
     user: mongoose.Types.ObjectId,
     address: mongoose.Types.ObjectId,
-    subject: string,
+    subject: string | null,
     references: string[],
     metadata: object
 }
@@ -25,7 +25,7 @@ var threadSchema = new Schema({
         ref: 'Address',
         required: true
     },
-    subject: { type: String, required: true },
+    subject: { type: String },
     references: [
         { type: String, required: true }
     ],
