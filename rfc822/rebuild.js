@@ -1,10 +1,6 @@
 const PassThrough = require('stream').PassThrough
 const NEWLINE = Buffer.from('\r\n')
 
-// Should remove this if case 
-// for now dont wory about huge email body
-// keep a limit of 5 mb total on haraka and then reject bigger ones
-
 function formatHeaders(headers) {
     headers = headers || [];
     if (!Array.isArray(headers)) {

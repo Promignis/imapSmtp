@@ -5,9 +5,15 @@ const fs = require('fs')
 const ps = require('promisify-call')
 const pcli = require('grpc-promise')
 var libmime = require('libmime');
-const uuidv4 = require('uuid/v4');
+const uuidv4 = require('uuid/v4')
 var mime = require('mime-types')
-var addrparser = require('address-rfc2822');
+var addrparser = require('address-rfc2822')
+var rfcHelpers = require('../../rfc822')
+const parse = rfcHelpers.parseMIME
+const getMaidData = rfcHelpers.extractMailData
+const createBodyStructure = rfcHelpers.createIMAPBodyStructure
+const createEnvelope = rfcHelpers.createIMAPEnvelop
+
 
 exports.setupProtoClient = function (server, next) {
     const plugin = this;
@@ -129,82 +135,110 @@ exports.hook_queue = function (next, connection, params) {
     const header = txn.header
     let attachments = txn.notes.attachment.attachments
 
-    const rcptTo = txn.rcpt_to.map((r) => {
-        let add = {}
-        // will convert "<a@a.com>" to  "a@a.com"
-        add['original'] = addrparser.parse(r.original)[0].address
-        add['originalHost'] = r.original_host
-        add['host'] = r.host
-        add['user'] = r.user
-        return add
-    })
 
-    const headerTuples = Object.keys(header.headers_decoded).reduce((acc, key) => {
-        let value = header.headers_decoded[key]
-        if (value.length > 1) {
-            value = value.join("\n")
-        } else {
-            value = value[0]
+    // get_data calls the callback once the complete raw mail has been buffered in memory
+    txn.message_stream.get_data(async (buffer) => {
+
+
+        // Parse it
+        let parsedMime = parse(buffer)
+        // Extract attachment data out
+        let md = getMaidData(parsedMime, true)
+
+        let attachmentMap = {}
+
+        for (let i = 0; i < md.nodes.length; i++) {
+            // let file = await create(bucket, nodes[i])
+            attachmentMap[nodes[i].attachmentId] = attachments[i].id
         }
-        acc[key] = value
-        return acc
-    }, {})
 
-    let info = {}
-    Object.keys(headerTuples).map(key => {
+        // Add reference to stored attachments in the parsed mime tree
+        // to rebuild the orignal email later
+        parsedMime['attachmentMap'] = attachmentMap
 
-        // takes the value: 'name <address@a.com>, name2 <address2@a.com>'
-        // and converts it to
-        // [{name: name, address: address@a.com},{name: name2, address: address2@a.com}]
-        // Note: Bcc header is mostly never present.
-        if (['from', 'to', 'cc', 'bcc'].includes(key)) {
-            info[key] = addrparser.parse(headerTuples[key]).map(adr => {
-                return adr.address
+        let text = md.text
+        let html = md.html
+
+        const rcptTo = txn.rcpt_to.map((r) => {
+            let add = {}
+            // will convert "<a@a.com>" to  "a@a.com"
+            add['original'] = addrparser.parse(r.original)[0].address
+            add['originalHost'] = r.original_host
+            add['host'] = r.host
+            add['user'] = r.user
+            return add
+        })
+
+        const headerTuples = Object.keys(header.headers_decoded).reduce((acc, key) => {
+            let value = header.headers_decoded[key]
+            if (value.length > 1) {
+                value = value.join("\n")
+            } else {
+                value = value[0]
+            }
+            acc[key] = value
+            return acc
+        }, {})
+
+        let info = {}
+        Object.keys(headerTuples).map(key => {
+
+            // takes the value: 'name <address@a.com>, name2 <address2@a.com>'
+            // and converts it to
+            // [{name: name, address: address@a.com},{name: name2, address: address2@a.com}]
+            // Note: Bcc header is mostly never present.
+            if (['from', 'to', 'cc', 'bcc'].includes(key)) {
+                info[key] = addrparser.parse(headerTuples[key]).map(adr => {
+                    return adr.address
+                })
+            }
+        })
+
+        let addresses = txn.notes.targets.addresses
+
+        // let extractedInfo = extBody(body) // Will be removed 
+        // let related = extractedInfo.hasRelatedNode // will be removed
+
+        // Add appropriate relate fields to attachments
+        attachments = attachments.map(att => {
+            if (related) {
+                att['related'] = att.contentId != ''
+            } else {
+                att['related'] = false
+            }
+
+            return att
+        })
+
+        // Build payload
+        let mailData = {
+            uniquercpt: Array.from(addresses),
+            size: txn.data_bytes, // Total size of the email,
+            parsedHeaders: headerTuples,
+            attachments: attachments,
+            from: info.from,
+            to: info.to,
+            cc: info.cc || [],
+            bcc: info.bcc || [],
+            rcptTo: rcptTo,
+            meta: {},
+            text,
+            html,
+            stringifiedMimeTree: JSON.stringify(parsedMime)
+        }
+
+        // Call grpc
+        ps(this.grpcClient, this.grpcClient.saveInbound, mailData)
+            .then(resp => {
+                // Response is empty in case of successfull saving
+                next(OK)
             })
-        }
+            .catch(e => {
+                connection.logerror(`Error Saving email: ${e.toString()}`)
+                next(DENY, `Error processing the email.`)
+            })
+
     })
-
-    let addresses = txn.notes.targets.addresses
-
-    let extractedInfo = extBody(body)
-    let related = extractedInfo.hasRelatedNode
-
-    // Add appropriate relate fields to attachments
-    attachments = attachments.map(att => {
-        if (related) {
-            att['related'] = att.contentId != ''
-        } else {
-            att['related'] = false
-        }
-
-        return att
-    })
-
-    // Build payload
-    let mailData = {
-        uniquercpt: Array.from(addresses),
-        size: txn.data_bytes, // Total size of the email,
-        parsedHeaders: headerTuples,
-        body: extractedInfo.parsedBody,
-        attachments: attachments,
-        from: info.from,
-        to: info.to,
-        cc: info.cc || [],
-        bcc: info.bcc || [],
-        rcptTo: rcptTo,
-        meta: {}
-    }
-
-    // Call grpc
-    ps(this.grpcClient, this.grpcClient.saveInbound, mailData)
-        .then(resp => {
-            // Response is empty in case of successfull saving
-            next(OK)
-        })
-        .catch(e => {
-            connection.logerror(`Error Saving email: ${e.toString()}`)
-            next(DENY, `Error processing the email.`)
-        })
 }
 
 /**

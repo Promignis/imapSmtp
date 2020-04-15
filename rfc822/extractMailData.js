@@ -1,5 +1,6 @@
 const crypto = require('crypto')
 var libqp = require('libqp')
+const he = require('he')
 
 // ? why the fuck are we even doing this shit????
 const MAX_HTML_PARSE_LENGTH = 2 * 1024 * 1024; // do not parse HTML messages larger than 2MB to plaintext
@@ -18,8 +19,29 @@ function expectedB64Size(b64size) {
     return Math.ceil(((b64size - newlines * 2) / 4) * 3)
 }
 
+function textToHtml(str) {
+    let encoded = he
+        // encode special chars
+        .encode(str, {
+            useNamedReferences: true
+        });
+    let text = `<p>${
+        encoded
+            .replace(/\r?\n/g, '\n')
+            .trim() // normalize line endings
+            .replace(/[ \t]+$/gm, '')
+            .trim() // trim empty line endings
+            .replace(/\n\n+/g, '</p><p>')
+            .trim() // insert <p> to multiple linebreaks
+            .replace(/\n/g, '<br/>') // insert <br> to single linebreaks
+        }</p>`
+
+    return text
+}
+
 // This takes the parsed MimeTree and removes all the attachment node bodies from it (Reduced-MimeTree)
 // extracts mail text/html and creates a flattened representation of the attachment nodes of the MimeTree
+// If trim is passed true, then node body property is set to false
 /**
  * Response structure
  * MailData{
@@ -29,7 +51,7 @@ function expectedB64Size(b64size) {
                 contentType: string
                 transferEncoding: string
                 lineCount: number
-                body: buffer
+                body: buffer (if trim is false)
             }
  *      ],
  *      attachments: [
@@ -45,11 +67,11 @@ function expectedB64Size(b64size) {
  *          }
  *      ],
  *      text: string
- *      html: string
+ *      html: <string>[]
  * }
  *  
  */
-const getMaildata = function (mimeTree) {
+const getMaildata = function (mimeTree, trim = false) {
     let maildata = {
         nodes: [],
         attachments: [],
@@ -184,13 +206,18 @@ const getMaildata = function (mimeTree) {
             }
 
             // push to queue
-            maildata.nodes.push({
+            let nodeObj = {
                 attachmentId,
                 contentType,
                 transferEncoding,
                 lineCount: node.lineCount,
                 body: node.body
-            })
+            }
+            if (trim) {
+                // If trim, then ignore the body section
+                nodeObj.body = false
+            }
+            maildata.nodes.push(nodeObj)
 
             // do not include text content and multipart elements in the attachment list
             if (!isInlineText && !/^(multipart)\//i.test(contentType)) {
@@ -226,6 +253,12 @@ const getMaildata = function (mimeTree) {
     }
 
     walk(mimeTree, false, false)
+
+    maildata.html = htmlContent.filter(str => str.trim())
+    maildata.text = textContent
+        .filter(str => str.trim())
+        .join('\n')
+        .trim()
 
     return maildata
 }

@@ -26,6 +26,7 @@
     "fastify-plugin": "^1.6.0",
     "fastify-swagger": "^2.5.0",
     "grpc": "^1.24.2",
+    "he": "^1.2.0",
     "http-status-codes": "^1.4.0",
     "libmime": "^4.2.1",
     "libqp": "^1.1.0",
