@@ -185,6 +185,13 @@ export class StreamHandler extends Writable {
             let err = command.addLine(commandLine)
             if (err == null) {
                 // If no error during adding the line then finish the command
+
+                // This task will happen in background asynchronously while the stream handler
+                // is freed to accpet more commands 
+                // It's the client's responsibility to order the commands correctly , or wait for 
+                // a command compeletion before sending the next one
+                // Server does not care about the ordering as long as its responses are properly tagged
+                // refer rfc 3501 section 2.2
                 command.finished()
             }
             // TODO: Log the error. Protocol errors have to be logged as info, system errors as error

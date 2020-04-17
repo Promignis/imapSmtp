@@ -6,6 +6,7 @@ import { noop } from './handlers/noop'
 import { list } from './handlers/list'
 import { select } from './handlers/select'
 import { unselect } from './handlers/unselect'
+import { fetch } from './handlers/fetch'
 
 
 const NOOP: CommandMeta = {
@@ -349,18 +350,24 @@ const FETCH: CommandMeta = {
     state: [State.SELECTED],
     schema: [
         {
-            name: 'range',
+            name: 'sequenceSet',
             optional: false,
             type: 'sequence'
         },
         {
-            name: 'data',
+            name: 'messageData',
             optional: false,
-            // mixed type means a mixture of strings and sequences
+            // mixed type means a array of atoms and sequences
             // eg. A654 FETCH 2:4 (FLAGS BODY[HEADER.FIELDS (DATE FROM)])
             type: 'mixed'
         },
-    ]
+        {
+            name: 'extension',
+            optional: true,
+            type: 'sequence' // Eg. s100 UID FETCH 1:* (FLAGS) (CHANGEDSINCE 12345)
+        }
+    ],
+    handler: fetch
 }
 
 const UID_FETCH: CommandMeta = {

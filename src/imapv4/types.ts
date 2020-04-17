@@ -111,7 +111,7 @@ export interface IMAPStatusResponse {
 
 export interface IMAPDataResponse {
     tag?: string
-    command: string,
+    command?: string,
     attributes: any // Can be dynamic (same as ParsedCommand.attributes)
 }
 
@@ -210,3 +210,32 @@ export interface IMAPHandlerServices {
 }
 
 export type CommandHandler = (conn: IMAPConnection, cmd: ParsedCommand) => Promise<IMAPStatusResponse>
+
+// eg. for a messageData param BODY[HEADER.FIELDS (DATE FROM)]
+// query will look like 
+/**
+ * {
+ *   query: 'BODY[HEADER.FIELDS (DATE FROM)]',
+ *  item: 'BODY',
+ *  orignal: [ { type: 'ATOM', value: 'BODY', section: []... } ] 
+ *  path: '',
+ *  type: 'HEADER.FIELDS',
+ *  headers: [ 'date', 'from' ],
+ *  isLiteral: true
+ * }
+ */
+export interface FetchQuery {
+    queryString: string,
+    original: any, // Orignal param object
+    item?: string, // One of messageDataItems keys
+    path?: string, // Mime tree path , eg. '1.2.3.TEXT' , refer rfc3051 section 6.4.5
+    type?: string, // if BODY, then param type will be added here , eg. HEADER.FIELDS
+    headers?: string[], // if type has a header option , then this will have those headers
+    isLiteral: boolean // The response for this query will be 
+    partial?: bodyPartial // If BODY param has a partial option , it will be added here
+}
+
+export interface bodyPartial {
+    startFrom: number,
+    maxLength: number
+}

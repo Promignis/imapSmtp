@@ -68,7 +68,6 @@ export const supportedSystemFlags = [
     '\\Seen',
     '\\Draft',
     '\\Flagged',
-    '\\Deleted',
-    '\\Answered'
+    '\\Deleted'
 ]
 

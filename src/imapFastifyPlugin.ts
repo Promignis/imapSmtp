@@ -32,6 +32,14 @@ interface imapSession {
 
 }
 
+const imapFlagstoMessageDb: object = {
+    // refer message model
+    '\\Seen': 'flags.seen',
+    '\\Draft': 'draft',
+    '\\Flagged': 'flags.important',
+    '\\Deleted': 'deleted'
+}
+
 function login(fastify: any) {
     return async function (username: string, password: string): Promise<onLoginResp> {
         let resp: onLoginResp
