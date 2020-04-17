@@ -204,13 +204,14 @@ function select(fastify: any) {
         let response: onSelectResp = {
             flags: flags,
             exists: mailbox.stats.total,
-            unseen: mailbox.stats.unseen,
             permanentFlags: flags,
             uidNext: mailbox.uidNext,
             uidValidity: mailbox.uidValidity,
             HIGHESTMODSEQ: mailbox.modifyIndex,
             readOnly: false,
             updatedSession: session
+            // TODO: Look into if we need to implement message sequence numbers, 
+            // so that we can send unseen message seq number  
         }
 
         return response
