@@ -1,4 +1,4 @@
-const parseMIME = require('./rfcparser')
+const parseMIME = require('./rfc822parser')
 const extractMailData = require('./extractMailData')
 const getLength = require('./getLength')
 const createIMAPEnvelop = require('./getEnvelope')

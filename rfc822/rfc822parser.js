@@ -1,3 +1,9 @@
+// refer: https://snyk.io/vuln/npm:emailjs-mime-parser:20180625
+// validate the number of multiparts,
+// If not then we are allowing an attacker to send a crafted email containing a few million multiparts,
+// which will then explode RAM usage, and cause an out of memory crash
+const MAXIMUM_NUMBER_OF_MIME_NODES = 99
+
 /**
  * Converts tokens for a single address into an address object
  *
@@ -297,6 +303,8 @@ class MIMEParser {
             rootNode: true,
             childNodes: []
         }
+        this._nodecount = 0
+
         this._node = this.createNode(this.tree)
 
     }
@@ -362,6 +370,12 @@ class MIMEParser {
 
             // store the linebreak for later usage
             prevBr = this._br
+
+            // Check if max nodes reached
+            // if yes then stop processing anymore and throw error 
+            if (this._nodecount > MAXIMUM_NUMBER_OF_MIME_NODES) {
+                throw new Error(`Number of MIME nodes greater than ${MAXIMUM_NUMBER_OF_MIME_NODES}!`)
+            }
         }
     }
 
@@ -377,7 +391,7 @@ class MIMEParser {
         // matches a carriage return
         // matches a line-feed (newline) character
         // $ asserts position at the end of a line
-        let match = this.rfc822.substr(this._pos).match(/(.*?)(\r?\n|$)/)
+        let match = this.rfc822.substr(this._pos).match(/(.*?)(\r*\n|$)/)
         if (match) {
             this._br = match[2] || false
             this._pos += match[0].length
@@ -433,6 +447,7 @@ class MIMEParser {
      * Creates a new node with default values for the parse tree
      */
     createNode(parentNode) {
+        this._nodecount++
         let node = {
             state: 'header',
             childNodes: [], // Array of node types
@@ -622,7 +637,12 @@ function parse(rfc822) {
     let parser = new MIMEParser(rfc822)
     let response
 
-    parser.parse()
+    try {
+        parser.parse()
+    } catch (e) {
+        throw e
+    }
+
     parser.finalizeTree()
 
     response = parser.tree.childNodes[0] || false

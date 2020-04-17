@@ -139,9 +139,15 @@ exports.hook_queue = function (next, connection, params) {
     // get_data calls the callback once the complete raw mail has been buffered in memory
     txn.message_stream.get_data(async (buffer) => {
 
-
+        let parsedMime
         // Parse it
-        let parsedMime = parse(buffer)
+        try {
+            parsedMime = parse(buffer)
+        } catch (e) {
+            // If error parsing it, then deny the request
+            connection.logerror(`Error Parsing email: ${e.toString()}`)
+            next(DENY, `Error processing the email.`)
+        }
         // Extract attachment data out
         let md = getMaidData(parsedMime, true)
 
