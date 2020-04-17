@@ -241,7 +241,10 @@ function select(fastify: any) {
             uidNext: mailbox.uidNext,
             uidValidity: mailbox.uidValidity,
             HIGHESTMODSEQ: mailbox.modifyIndex,
-            readOnly: false,
+            // For now, access to a mailbox is read only. 
+            // it should be false when STORE and EXPUNGE commands 
+            // which are not currently implemented
+            readOnly: true,
             updatedSession: session
             // TODO: Look into if we need to implement message sequence numbers, 
             // so that we can send unseen message seq number  
