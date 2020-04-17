@@ -33,6 +33,7 @@ class MessageService {
         return newMessage
     }
 
+    // TODO: Type the response to IMessageDoc instead of any
     async findMessages(ctx: ServiceContext, query: FindQuery, options?: object): Promise<any> {
         let dbCallOptions: any = {}
         if (ctx.session) {

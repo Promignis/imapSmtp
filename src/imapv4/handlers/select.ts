@@ -38,9 +38,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         }
     }
 
-    let selectOpts = enableCondstore ? ['CONDSTORE'] : []
     let [err, resp] = await to(conn._imapServer.handlerServices.onSelect(conn.session!, mailboxaname))
-
 
     if (err != null) {
         // if a mailbox is already selected and a SELECT command that
@@ -59,7 +57,6 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         // Reset the connection state
         conn.resetSelectedState()
 
-
         return {
             tag: cmd.tag,
             type: IMAPResponseStatus.NO,
@@ -75,6 +72,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         conn.selected = true
         conn.selectedMailboxData = {
             mailboxaname: mailboxaname,
+            messageSequence: resp.messageSequence
         }
         // Update the session
         conn.session = resp.updatedSession

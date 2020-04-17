@@ -2,6 +2,9 @@
 // validate the number of multiparts,
 // If not then we are allowing an attacker to send a crafted email containing a few million multiparts,
 // which will then explode RAM usage, and cause an out of memory crash
+// Also MongoDB supports no more than 100 levels of nesting for BSON documents
+// anyways , if a message needs to have more than 99 mime nodes, it's very likely
+// bad data
 const MAXIMUM_NUMBER_OF_MIME_NODES = 99
 
 /**

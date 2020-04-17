@@ -150,6 +150,9 @@ export interface onListOpts {
 
 // Refer rfc3501 section 6.3.1 
 export interface onSelectResp {
+    // This should be an ordered list of uids of all messages in the mailbox
+    // refer: rfc3501 2.3.1.2
+    messageSequence: number[]
     flags: string[],
     // The number of messages in the mailbox
     exists: number,
@@ -175,10 +178,10 @@ export interface onSelectResp {
     // 0 value means the server doesn't support the persistent
     // storage of mod-sequences for the mailbox 
     // refer rfc4551 section 3.6
-    HIGHESTMODSEQ?: number
+    HIGHESTMODSEQ?: number,
     // If read only then no change can be made to the mailbox, like running STORE command etc.
     // If not passed , it takes the default value false
-    readOnly?: boolean
+    readOnly?: boolean,
     // If the service wants it can update the session object to persist mailbox data
     // current session data will be updated with this value
     // the updated value will be passed to it later when commands like SEARCH , FETCH etc.. are called
