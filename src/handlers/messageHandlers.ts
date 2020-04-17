@@ -395,7 +395,6 @@ export function outboundMessage(fastify: any): any {
             }
         })
 
-        // Get mail size (without attachments)
         let hasAttachments = false
 
         // If attachments add attachments and get a new rfc822 email
@@ -424,7 +423,8 @@ export function outboundMessage(fastify: any): any {
             attachmentMap[mailData.nodes[i].attachmentId] = attachments[i].fileId
         }
         let imapBodyStr = createIMAPBodyStructure(mimeTree)
-        let mailSize = getLength(mimeTree, true)
+        // Get total mail size
+        let mailSize = getLength(mimeTree)
         let imapEnv = createIMAPEnvelop(mimeTree.parsedHeader || {})
         let mailText = mailData.text
         let mailHTML = mailData.html
