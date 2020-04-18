@@ -418,10 +418,17 @@ export function outboundMessage(fastify: any): any {
 
         let mailData: any = extractMailData(mimeTree, true)
         let attachmentMap: any = {}
-        for (let i = 0; i < mailData.length; i++) {
-            // let file = await create(bucket, nodes[i])
+
+        for (let i = 0; i < mailData.nodes.length; i++) {
             attachmentMap[mailData.nodes[i].attachmentId] = attachments[i].fileId
         }
+
+        for (let i = 0; i < mailData.attachments; i++) {
+            attachments[i]['related'] = mailData.attachments[i].related
+        }
+
+        mimeTree['attachmentMap'] = attachmentMap
+
         let imapBodyStr = createIMAPBodyStructure(mimeTree)
         // Get total mail size
         let mailSize = getLength(mimeTree)
