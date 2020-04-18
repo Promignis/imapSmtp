@@ -1,23 +1,16 @@
 const PassThrough = require('stream').PassThrough
 const NEWLINE = Buffer.from('\r\n')
+const formatHeaders = require('./utils').formatHeaders
 
-function formatHeaders(headers) {
-    headers = headers || [];
-    if (!Array.isArray(headers)) {
-        headers = [].concat(headers || []);
-    }
-    return headers;
-}
-
-// Rebuilds the original rfc822 text from the MimeTree object 
+// Rebuilds the original rfc822 text from the MimeTree object (that we get from rfc822parser.js)
 /**
  * If there were attachments , then it needs 2 arguments getAttachment and createReadStream 
  * which are methods with the following signature
- *       getAttachment(unique_identifier) => object | null
+ *       getAttachment(unique_identifier) => Promise(object | null)
  * what ever getAttachment returns will be passed on to createReadStream 
  *       createReadStream(unique_identifier, <whatever was returned by getAttachment()>, <optional>{<number>start, <number>end}) => RedableStream
  * 
- * This readable stream should stream the attachment data 
+ * This readable stream should stream the attachment data
  * 
  * Returns
  * This method returns a Passthrough stream , that streams the rebuilt rfc822 text
@@ -29,10 +22,11 @@ const rebuild = async function (mimeTree, getAttachment, createReadStream, textO
     let output = new PassThrough();
     let aborted = false;
 
-    let startFrom = Math.max(Number(options.startFrom) || 0, 0);
-    let maxLength = Math.max(Number(options.maxLength) || 0, 0);
+    let skipExternal = options.skipExternal || false
+    let startFrom = Math.max(Number(options.startFrom) || 0, 0)
+    let maxLength = Math.max(Number(options.maxLength) || 0, 0)
 
-    output.isLimited = !!(options.startFrom || options.maxLength);
+    output.isLimited = !!(options.startFrom || options.maxLength)
 
     let curWritePos = 0;
     let writeLength = 0;
@@ -159,7 +153,7 @@ const rebuild = async function (mimeTree, getAttachment, createReadStream, textO
             if (node.boundary) {
                 // this is a multipart node, so start with initial boundary before continuing
                 await emit(`--${node.boundary}`);
-            } else if (node.attachmentId && !options.skipExternal) {
+            } else if (node.attachmentId && skipExternal) {
                 await emit(false, true); // force newline between header and contents
 
                 // this is like a local id right now , example ATT001.... is it needed??

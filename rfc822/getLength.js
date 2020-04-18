@@ -1,3 +1,5 @@
+const formatHeaders = require('./utils').formatHeaders
+
 const getSize = function (mimeTree, textOnly) {
     let size = 0;
     let first = true;
@@ -63,14 +65,6 @@ const getSize = function (mimeTree, textOnly) {
     walk(mimeTree, () => false);
 
     return size;
-}
-
-function formatHeaders(headers) {
-    headers = headers || [];
-    if (!Array.isArray(headers)) {
-        headers = [].concat(headers || []);
-    }
-    return headers;
 }
 
 module.exports = getSize

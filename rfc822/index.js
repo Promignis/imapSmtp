@@ -4,6 +4,8 @@ const getLength = require('./getLength')
 const createIMAPEnvelop = require('./getEnvelope')
 const rebuildOriginal = require('./rebuild')
 const createIMAPBodyStructure = require('./extractBodyStructure')
+const resolveNode = require('./resolveNode')
+const formatHeaders = require('./utils').formatHeaders
 
 module.exports = {
     parseMIME,
@@ -11,5 +13,7 @@ module.exports = {
     getLength,
     rebuildOriginal,
     createIMAPBodyStructure,
-    createIMAPEnvelop
+    createIMAPEnvelop,
+    resolveNode,
+    formatHeaders
 }
