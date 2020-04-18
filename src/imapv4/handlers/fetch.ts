@@ -2,7 +2,8 @@ import {
     CommandHandler,
     ParsedCommand,
     IMAPStatusResponse,
-    FetchQuery
+    FetchQuery,
+    onFetchOptions
 } from '../types'
 import { IMAPResponseStatus } from '../constants'
 import { IMAPConnection } from '../imapConnection'
@@ -98,7 +99,7 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
     }
 
     // Get list of uids that fall into the sequenceSet
-    let messageIds = getMessages(conn.selectedMailboxData.messageSequence, sequenceSet, isUid)
+    let messageUids = getMessages(conn.selectedMailboxData.messageSequence, sequenceSet, isUid)
 
     // Macros as defined in rfc 3501 section 6.4.5
     let macros = new Map(
@@ -121,10 +122,6 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
     let flagsExist: boolean = false
     let uidExist: boolean = false
     let modseqExist: boolean = false
-    let bodystructureExist: boolean = false
-    let rfc822sizeExist: boolean = false
-    let envelopeExist: boolean = false
-    let idateExist: boolean = false
 
     messageData.forEach((param: any, i: number) => {
         if (!param || (typeof param !== 'string' && param.type !== 'ATOM')) {
@@ -171,22 +168,6 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
 
         if (param.value.toUpperCase() === 'MODSEQ') {
             modseqExist = true;
-        }
-
-        if (param.value.toUpperCase() === 'BODYSTRUCTURE') {
-            bodystructureExist = true;
-        }
-
-        if (param.value.toUpperCase() === 'RFC822.SIZE') {
-            rfc822sizeExist = true;
-        }
-
-        if (param.value.toUpperCase() === 'ENVELOPE') {
-            envelopeExist = true;
-        }
-
-        if (param.value.toUpperCase() === 'INTERNALDATE') {
-            idateExist = true;
         }
     })
 
@@ -238,6 +219,27 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
         }
     }
 
+    console.log(queries, "-------------------------")
+
+    let opts: onFetchOptions = {
+        queries: queries,
+        markAsSeen,
+        messageUids: messageUids,
+    }
+
+    if (changedSince) {
+        opts.changedSince = changedSince
+    }
+
+    let [err, fetchedRes] = await to(conn._imapServer.handlerServices.onFetch!(conn.session!, opts))
+    if (err != null) {
+        throw err
+    }
+
+    for await (let f of fetchedRes!) {
+        console.log(f.uid, ' from the services ')
+    }
+
     return {
         tag: cmd.tag,
         type: IMAPResponseStatus.BAD,
@@ -264,7 +266,7 @@ function createQueries(messageData: any[]): FetchQuery[] {
             // If just BODY
             if (!param.section.length) {
                 q.path = ''
-                q.type = ''
+                q.type = 'CONTENT' // BODY[]
             } else {
                 // Will look like "TEXT" or "1.2.TEXT" where 1.2 is the mime tree path
                 section = (param.section[0].value || '').toString().toUpperCase()
@@ -274,7 +276,8 @@ function createQueries(messageData: any[]): FetchQuery[] {
                 if (matchedPath && matchedPath[0].length) {
                     // remove the last fullstop
                     q.path = matchedPath[0].replace(/\.$/, '')
-                    q.type = section.substr(q.path.length + 1) || ''
+                    // fir 1.2.TEXT type is TEXT , for 1.2.3 type is CONTENT 
+                    q.type = section.substr(q.path.length + 1) || 'CONTENT'
                 } else {
                     // If only path
                     q.path = isNaN(Number(section)) ? '' : section
@@ -306,7 +309,6 @@ function createQueries(messageData: any[]): FetchQuery[] {
         }
         // Validate if proper parameters were passed params were correct
         let schema = messageDataItems[q.item!]
-
         if (!schema || !queryIsValid(schema, q)) {
             throw new Error(`Invalid message data ${q.queryString} for FETCH`)
         }
@@ -329,6 +331,7 @@ function queryIsValid(schema: any, item: FetchQuery): boolean {
 
     // for BODY params
     if (schema && typeof schema === 'object') {
+        // for BODY[1.2.3] , item.type = ''
         if (schema.type && !schema.type.test(item.type)) {
             return false
         }

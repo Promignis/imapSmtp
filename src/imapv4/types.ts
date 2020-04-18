@@ -188,29 +188,6 @@ export interface onSelectResp {
     updatedSession: IMAPSession
 }
 
-export interface IMAPHandlerServices {
-    // It will take in username and password and return if  authentication was successfull or not
-    // and if it was then it will return the session object
-    onLogin: ((username: string, password: string) => Promise<onLoginResp>) | null,
-    onFetch: null,
-    onList: ((sess: IMAPSession, params: onListOpts) => Promise<MailboxInfo[]>) | null,
-    onLsub: null,
-    onSubscribe: null,
-    onUnsubscribe: null,
-    onCreate: null,
-    onRename: null,
-    onDelete: null,
-    onSelect: ((sess: IMAPSession, mailboxname: string) => Promise<onSelectResp | null>) | null,
-    onStatus: null,
-    onAppend: null,
-    onStore: null,
-    onExpunge: null,
-    onCopy: null,
-    onSearch: null,
-}
-
-export type CommandHandler = (conn: IMAPConnection, cmd: ParsedCommand) => Promise<IMAPStatusResponse>
-
 // eg. for a messageData param BODY[HEADER.FIELDS (DATE FROM)]
 // query will look like 
 /**
@@ -232,10 +209,44 @@ export interface FetchQuery {
     type?: string, // if BODY, then param type will be added here , eg. HEADER.FIELDS
     headers?: string[], // if type has a header option , then this will have those headers
     isLiteral: boolean // The response for this query will be 
-    partial?: bodyPartial // If BODY param has a partial option , it will be added here
+    partial?: BodyPartial // If BODY param has a partial option , it will be added here
 }
 
-export interface bodyPartial {
+export interface BodyPartial {
     startFrom: number,
     maxLength: number
 }
+
+export interface onFetchOptions {
+    queries: FetchQuery[],
+    markAsSeen: boolean, // Based on server selected state, it tells weather to mark messages as seen or not
+    messageUids: number[], // List of message uids 
+    changedSince?: number
+}
+
+export interface onFetchResponse {
+
+}
+
+export interface IMAPHandlerServices {
+    // It will take in username and password and return if  authentication was successfull or not
+    // and if it was then it will return the session object
+    onLogin: ((username: string, password: string) => Promise<onLoginResp>) | null,
+    onFetch: ((sess: IMAPSession, options: onFetchOptions) => Promise<AsyncGenerator<any | null, void, unknown>>) | null,
+    onList: ((sess: IMAPSession, params: onListOpts) => Promise<MailboxInfo[]>) | null,
+    onLsub: null,
+    onSubscribe: null,
+    onUnsubscribe: null,
+    onCreate: null,
+    onRename: null,
+    onDelete: null,
+    onSelect: ((sess: IMAPSession, mailboxname: string) => Promise<onSelectResp | null>) | null,
+    onStatus: null,
+    onAppend: null,
+    onStore: null,
+    onExpunge: null,
+    onCopy: null,
+    onSearch: null,
+}
+
+export type CommandHandler = (conn: IMAPConnection, cmd: ParsedCommand) => Promise<IMAPStatusResponse>

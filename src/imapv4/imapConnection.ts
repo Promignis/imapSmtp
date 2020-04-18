@@ -179,9 +179,17 @@ export class IMAPConnection extends EventEmitter {
             capabilities.push('ID')
             capabilities.push('UNSELECT')
             capabilities.push('CONDSTORE') // rfc4551
-            capabilities.push('ENABLE')
             capabilities.push(`APPENDLIMIT=${MAX_MESSAGE_SIZE}`)
             capabilities.push('SPECIAL-USE') // refer rfc6154
+
+            // capabilities.push('ENABLE') (rfc5161)
+            // "UTF8=ACCEPT" (rfc5738) capablity is supported by default
+            // this needs to be enabled by the client using ENABLE capability
+            // For now we are not supporting any client that does not accept utf-8
+            // Any modern client should work with utf-8 by default , so we might not need to 
+            // implement it. In case we need to support some old or some specific client
+            // then it can be added. 
+
             // Capabilities that can be added in future easily
             // capabilities.push('UIDPLUS') // rfc4315 , adds UID EXPUNGE command
             // capabilities.push('UTF8=ACCEPT') // rfc6855

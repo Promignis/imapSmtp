@@ -1,8 +1,10 @@
 import GridFS from '../db/gridFS'
 import mongoose from 'mongoose'
+import mongodb from 'mongodb'
 import { AttachmentInfo } from '../types/types'
 import { GridFSWriteOpts } from '../db/types'
-import { IAttachment } from '../db/attachments'
+import { IAttachmentDoc } from '../db/attachments'
+import { to } from '../imapv4/utils'
 
 class AttachmentService {
     gridFS: GridFS
@@ -11,7 +13,7 @@ class AttachmentService {
         this.gridFS = gridFS
     }
 
-    async saveAttachment(ctx: any, attStream: NodeJS.ReadableStream, info: AttachmentInfo): Promise<IAttachment> {
+    async saveAttachment(ctx: any, attStream: NodeJS.ReadableStream, info: AttachmentInfo): Promise<IAttachmentDoc> {
         let metadata: any = {
             count: info.count
         }
@@ -44,8 +46,23 @@ class AttachmentService {
 
     }
 
-    getDownloadStream(id: mongoose.Types.ObjectId): NodeJS.ReadableStream {
-        return this.gridFS.read(id)
+    async getAttachment(filter: any): Promise<IAttachmentDoc | null> {
+
+        let [err, res] = await to(this.gridFS.getFile(filter))
+
+        if (err != null) {
+            throw err
+        }
+
+        if (!res) {
+            return null
+        }
+
+        return <IAttachmentDoc>res!
+    }
+
+    getDownloadStream(id: mongodb.ObjectID, opts?: { start: number, end: number }): NodeJS.ReadableStream {
+        return this.gridFS.read(id, opts)
     }
 }
 

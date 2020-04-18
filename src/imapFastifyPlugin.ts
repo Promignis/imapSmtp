@@ -1,17 +1,23 @@
 import fastifyPlugin from 'fastify-plugin'
+import mongodb from 'mongodb'
 import {
     IMAPServer,
     onLoginResp,
     IMAPSession,
     onListOpts,
     MailboxInfo,
-    onSelectResp
+    onSelectResp,
+    onFetchOptions,
+    FetchQuery,
 } from './imapv4'
 import { IUser } from './db/users'
-import { IMailboxDoc, IMailbox } from './db/mailboxes'
+import { IMailboxDoc } from './db/mailboxes'
+import { IAttachmentDoc } from './db/attachments'
 import { to } from './utils'
 import { imapLogger } from './logger'
 import { FindQuery } from './types/types'
+import { IMAPFlagsToMessageModel } from './imapUtils'
+import { IMessageDoc } from './db/messages'
 
 async function setupIMAPServer(fastify: any, { }, done: Function) {
     let server = new IMAPServer({ logger: imapLogger })
@@ -20,6 +26,7 @@ async function setupIMAPServer(fastify: any, { }, done: Function) {
     server.handlerServices.onLogin = login(fastify)
     server.handlerServices.onList = list(fastify)
     server.handlerServices.onSelect = select(fastify)
+    server.handlerServices.onFetch = fetch(fastify)
     fastify.decorate('imapServer', server)
 
     done()
@@ -32,12 +39,61 @@ interface imapSession {
 
 }
 
-const imapFlagstoMessageDb: object = {
-    // refer message model
-    '\\Seen': 'flags.seen',
-    '\\Draft': 'draft',
-    '\\Flagged': 'flags.important',
-    '\\Deleted': 'deleted'
+function getAttachment(fastify: any) {
+    return async function (id: string): Promise<IAttachmentDoc | null> {
+        let filter: any = {
+            _id: new mongodb.ObjectID(id)
+        }
+        let [err, res] = await to(fastify.attachmentService.getAttachment(filter))
+        if (err != null) {
+            throw err
+        }
+
+        if (!res) {
+            return null
+        }
+
+        return <IAttachmentDoc>res
+    }
+}
+
+function createReadStream(fastify: any) {
+    // This method will be internally called by rebuild method
+    // attachmentData is of whatever type getAttachment returns
+    // bounds has the following structure
+    /**
+     * {
+     *  startFrom?: number,
+     *  maxLength.number
+     * }
+     */
+    return function (id: string, attachmentData: any, bounds: any): NodeJS.ReadableStream {
+        let readStream: NodeJS.ReadableStream
+        let objectId = new mongodb.ObjectID(id)
+        if (attachmentData) {
+            let streamOpts: { start: number, end: number } = { start: 0, end: 0 }
+
+            if (bounds) {
+                streamOpts.start = bounds.startFrom
+                streamOpts.end = bounds.startFrom + bounds.maxLength
+            }
+            // ensure that the bounds don't exceed message length
+            if (streamOpts.start && streamOpts.start > attachmentData.length) {
+                streamOpts.start = attachmentData.length
+            }
+
+            if (streamOpts.end && streamOpts.end > attachmentData.length) {
+                streamOpts.end = attachmentData.length
+            }
+
+            readStream = fastify.attachmentService.getDownloadStream(objectId, streamOpts)
+
+        } else {
+            readStream = fastify.attachmentService.getDownloadStream(objectId)
+        }
+
+        return readStream
+    }
 }
 
 function login(fastify: any) {
@@ -199,14 +255,11 @@ function select(fastify: any) {
         }
 
         let mailbox = mailboxes![0]
-        let flags = [
-            '\\Seen',
-            '\\Draft',
-            '\\Flagged',
-            '\\Deleted'
-        ]
+
+        let flags = Object.keys(IMAPFlagsToMessageModel)
+
         // Updated session
-        sess.selectedMailbox = mailbox._id.toHexString()
+        sess.selectedMailbox = mailbox.id
         session.sessionProps = sess
 
         // Create messageSequence array
@@ -226,8 +279,8 @@ function select(fastify: any) {
         // If we take a an exaple of a mailbox with a very large number of emails , say 100,000
         // even in that case , the query should be pretty fast because of proper indexing and the bandwidth
         // should also be pretty small as we are projecting just uid parameter 
-        // each uid is 2 bytes integer, so for 100,000 messages mongodb then amount of bytes transferred
-        // would be just ~200kb and it would use up only that much system memory per session.
+        // each uid is 4 bytes integer, so for 100,000 messages mongodb then amount of bytes transferred
+        // would be just ~400kb and it would use up only that much system memory per session.
         // If we scale to a palce where we are working with millions of messages in a mailbox,
         // then we might need to optimize how we are managing message sequence values.
         [err, messageIds] = await to(fastify.services.messageService.findMessages({}, messageUidQuery))
@@ -261,4 +314,113 @@ function select(fastify: any) {
         return response
     }
 }
+
+function fetch(fastify: any) {
+    //(sess: IMAPSession, options: onFetchOptions) => Promise<null>
+    return async function (session: IMAPSession, options: onFetchOptions): Promise<AsyncGenerator<any | null, void, unknown>> {
+        let userId = session.userUUID
+        let sess = <imapSession>session.sessionProps
+        let address = sess.address
+        let mbId = sess.selectedMailbox
+
+        let projection: string[] = ['_id', 'uid', 'modseq']
+
+        let metadataOnly: boolean = true
+
+        // Create a  filter to find the correct messages
+        options.queries.forEach((q: FetchQuery) => {
+            if (['BODY', 'RFC822', 'RFC822.HEADER', 'RFC822.TEXT'].includes(q.item!)) {
+                metadataOnly = false
+            }
+
+            if (q.item == 'BODYSTRUCTURE') {
+                projection.push('imapBodyStructure')
+            }
+
+            if (q.item == 'ENVELOPE') {
+                projection.push('envelope')
+            }
+
+            if (q.item == 'FLAGS') {
+                projection.push('flags')
+                projection.push('draft')
+                projection.push('deleted')
+            }
+
+            if (q.item == 'INTERNALDATE') {
+                projection.push('idate')
+            }
+        })
+
+        if (!metadataOnly) {
+            projection.push('body')
+        }
+
+        // call find with the filter but only grab a cursor
+
+        let findOptions = {
+            // Sort the results by uid
+            sort: { uid: 1 },
+            // For large mailboxes , this could take long time to complete
+            // depending on the size of the mailbox
+            // so keep load off the primary s
+            readPreference: 'secondaryPreferred'
+        }
+
+        let cursorOptions: any = {}
+        // If only these keys are being projected , then we can query a larger batch size
+        // as the amount of data being queried is pretty small
+        let limitedKeys = ['_id', 'flags', 'modseq', 'uid']
+
+        if (!projection.some(key => !limitedKeys.includes(key))) {
+            cursorOptions.batchSize = 1000
+        }
+
+        let findQuery: FindQuery = {
+            filter: {
+                user: userId,
+                address: address,
+                mailbox: mbId,
+                uid: {
+                    // $in has no upper limit to array length that can be passed to it
+                    // the query is only limited by total size , ie. 16mb
+                    // say we are dealing with messageUids of large sizes say 100,000
+                    // then it only adds ~400kb to the total query size
+                    // and because of indexing , it should be as effecient as it can be.
+                    // We might need to optimize if and when we start working with mailboxes
+                    // with millions of messages, like for example batching queries etc.
+                    $in: options.messageUids
+                }
+            },
+            projection: projection.join(' ')
+        }
+
+        if (options.changedSince) {
+            findQuery.filter = Object.assign(findQuery.filter, {
+                modseq: {
+                    $gt: options.changedSince
+                }
+            })
+        }
+
+        let opts: { dbCallOptions?: any, cursorOpts?: any } = {
+            dbCallOptions: findOptions,
+            cursorOpts: cursorOptions
+        }
+
+        // Call the service
+        let cursor = fastify.services.messageService.findMessagesCursor({}, findQuery, opts)
+
+        // return a generator
+        async function* gen() {
+            for (let msg = await cursor.next(); msg != null; msg = await cursor.next()) {
+                console.log('from the generator', msg.id)
+                yield msg
+            }
+        }
+
+        return gen()
+    }
+}
+
 export const setupIMAPPlugin = fastifyPlugin(setupIMAPServer)

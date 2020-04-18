@@ -54,6 +54,30 @@ class MessageService {
         return res
     }
 
+    findMessagesCursor(ctx: ServiceContext, query: FindQuery, options?: { dbCallOptions?: any, cursorOpts?: any }): mongoose.QueryCursor<IMessageDoc> {
+        let dbCallOptions: any = {}
+        let cursorOpts: any = {}
+        if (options && options.dbCallOptions) {
+            dbCallOptions = Object.assign(dbCallOptions, options.dbCallOptions)
+        }
+
+        if (options && options.cursorOpts) {
+            dbCallOptions = Object.assign(cursorOpts, options.cursorOpts)
+        }
+
+        if (ctx.session) {
+            dbCallOptions.session = ctx.session
+        }
+
+        let projection: string | null = query.projection ? query.projection : null
+
+        console.log(query.filter, projection, dbCallOptions, cursorOpts)
+
+        let cursor = this.Message.find(query.filter, projection, dbCallOptions).cursor(cursorOpts)
+
+        return cursor
+    }
+
     async updateMessages(ctx: ServiceContext, queryInfo: UpdateQuery, options?: Object): Promise<Number> {
         let dbCallOptions: any = {}
         if (ctx.session) {

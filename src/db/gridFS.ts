@@ -5,6 +5,7 @@ import { Stream } from 'stream'
 
 const GridFSBucket = mongoose.mongo.GridFSBucket
 
+// refer: mongodb.github.io/node-mongodb-native/3.6/api/GridFSBucket.html
 class GridFS {
 
     bucketName: string
@@ -92,19 +93,19 @@ class GridFS {
         return file
     }
 
-    read(id: mongoose.Types.ObjectId): NodeJS.ReadableStream {
-        let stream = this.bucket.openDownloadStream(id);
+    read(id: mongodb.ObjectID, opts?: { start: number, end: number }): NodeJS.ReadableStream {
+
+        let stream = this.bucket.openDownloadStream(id, opts)
         // The consumer can decide what to do with the stream
         return stream
     }
 
-    delete(id: mongoose.Types.ObjectId, done: { (error?: Error, id?: mongoose.Types.ObjectId): void }): void {
+    delete(id: mongodb.ObjectID, done: { (error?: Error, id?: mongoose.Types.ObjectId): void }): void {
 
         this.bucket.delete(id, function afterDelete(error) {
             return done(error, id);
         });
     }
-
 }
 
 export default GridFS
