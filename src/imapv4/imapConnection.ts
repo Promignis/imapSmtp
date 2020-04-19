@@ -4,7 +4,7 @@ import { TLSSocket } from 'tls'
 import { State, MAX_MESSAGE_SIZE } from './constants'
 import { StreamHandler } from './streamHandler'
 import { imapCommandCompiler } from './imapCommandCompiler'
-import { IMAPStatusResponse, IMAPDataResponse, IMAPCommandContResponse, IMAPSession } from './types'
+import { IMAPStatusResponse, IMAPDataResponse, IMAPCommandContResponse, IMAPSession, SelectedMailboxData } from './types'
 
 const SOCKET_TIMEOUT = 60 * 1000 * 30 // 30 minutes
 
@@ -26,7 +26,7 @@ export class IMAPConnection extends EventEmitter {
     state: State
     // Selected Mailbox metadata
     selected: boolean;
-    selectedMailboxData: any | null //TODO: Type it
+    selectedMailboxData: SelectedMailboxData | null
     // current session metadata , for eg. logged in user etc
     session: IMAPSession | null
     // Resolved hostname for remote IP address

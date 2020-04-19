@@ -18,9 +18,15 @@ import { imapLogger } from './logger'
 import { FindQuery } from './types/types'
 import { IMAPFlagsToMessageModel } from './imapUtils'
 import { IMessageDoc } from './db/messages'
+import { events } from './messageNotifier'
 
 async function setupIMAPServer(fastify: any, { }, done: Function) {
     let server = new IMAPServer({ logger: imapLogger })
+
+    // Setup Listners
+    fastify.messageNotifier.on(events.new, (msg: any) => {
+        console.log(process.pid, 'from the listner', msg)
+    })
 
     // attach services
     server.handlerServices.onLogin = login(fastify)
@@ -132,6 +138,7 @@ function login(fastify: any) {
             success: true,
             session: {
                 userUUID: userObj!.id,
+                mailboxUUID: '',
                 sessionProps: sess
             }
         }
@@ -259,7 +266,8 @@ function select(fastify: any) {
         let flags = Object.keys(IMAPFlagsToMessageModel)
 
         // Updated session
-        sess.selectedMailbox = mailbox.id
+        session.mailboxUUID = mailbox.id // This will be used by the imap server
+        sess.selectedMailbox = mailbox.id // this will be used by the services internally
         session.sessionProps = sess
 
         // Create messageSequence array
@@ -289,8 +297,7 @@ function select(fastify: any) {
             throw err
         }
 
-        // sort and ensure unique UIDs
-
+        // sort and ensure unique UIDs  
         let messageSequence = Array.from<number>(new Set(messageIds.map((m: any) => m.uid))).sort((a: unknown, b: unknown) => <number>a - <number>b)
 
         //Recent is not supported by the backend

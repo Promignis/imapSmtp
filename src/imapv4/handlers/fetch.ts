@@ -93,13 +93,15 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
         changedSince = Number(extensions[1])
 
         // In case CONDSTORE was not enabled during SELECT , make sure it's enabled now
+        // a FETCH command with the CHANGEDSINCE modifier is a CONDSTORE enabling command
+        // to see a list of all CONDSTORE enabling commands refer rfc7162 section 3.1
         if (changedSince && !conn.condstoreEnabled) {
             conn.condstoreEnabled = true
         }
     }
 
     // Get list of uids that fall into the sequenceSet
-    let messageUids = getMessages(conn.selectedMailboxData.messageSequence, sequenceSet, isUid)
+    let messageUids = getMessages(conn.selectedMailboxData!.messageSequence, sequenceSet, isUid)
 
     // Macros as defined in rfc 3501 section 6.4.5
     let macros = new Map(
@@ -143,7 +145,7 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
         // If BODY or RFC822 messageData used , then the messages should be marked \Seen 
         // but only if the selected mailbox is in [READ-WRITE] mode , if in [READ-ONLY]
         // then dont do it
-        if (!conn.selectedMailboxData.readOnly) {
+        if (!conn.selectedMailboxData!.readOnly) {
             if (param.value.toUpperCase() === 'BODY' && param.section) {
                 // BODY[...]
                 markAsSeen = true;

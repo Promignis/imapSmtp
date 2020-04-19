@@ -6,14 +6,17 @@ import { IMessage } from '../db/messages'
 import { ServerError, HTTP_STATUS } from '../errors'
 import { FindQuery, UpdateQuery } from '../types/types'
 import { IThread, IThreadDoc } from '../db/threads'
+import { MessageNotifier } from '../messageNotifier'
+
 export class MessageTX {
 
     conn: mongoose.Connection
     services: any
-
-    constructor(conn: mongoose.Connection, services: any) {
+    notifier: MessageNotifier
+    constructor(conn: mongoose.Connection, services: any, notifier: MessageNotifier) {
         this.conn = conn
         this.services = services
+        this.notifier = notifier
     }
 
     // Returns the saved message id
@@ -81,6 +84,15 @@ export class MessageTX {
             if (err != null) {
                 throw err
             }
+
+            // Notify
+            this.notifier.notifyNewMessage({
+                userid: mail.user.toHexString(),
+                mailboxId: mail.mailbox.toHexString(),
+                uid: mail.uid,
+                modseq: mail.modseq
+            })
+
             // return
             return savedMessageRes._id
         }))

@@ -125,8 +125,11 @@ export interface IMAPCommandContResponse {
 // sessionProps is kept any so that the handler can have all the flexibility to define its structure
 // userUUID is a mandetory field that should be any uuid that should be always unique for a particular user so that 
 // the imap server can use this to track the number of concurrent sessions for this user
+// mailboxUUID should be any uuid that should be always unique for a particular selected mailbox
+// this will be used my the imap server to listen to notifications and update it's selecte state
 export type IMAPSession = {
     userUUID: string,
+    mailboxUUID: string,
     sessionProps: any
 }
 
@@ -250,3 +253,10 @@ export interface IMAPHandlerServices {
 }
 
 export type CommandHandler = (conn: IMAPConnection, cmd: ParsedCommand) => Promise<IMAPStatusResponse>
+
+export interface SelectedMailboxData {
+    readOnly: boolean,
+    mailboxaname: string,
+    messageSequence: number[],
+    highestModSeq: number
+}

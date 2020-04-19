@@ -21,6 +21,7 @@ import fastifyJWT from 'fastify-jwt'
 import { isNotEmpty } from './ajvPlugins'
 import { fileHandlerPlugin } from './fileHandlerPlugin'
 import { promisify } from 'util'
+import { MessageNotifier } from './messageNotifier'
 
 // If using http2 we'd pass <http2.Http2Server, http2.Http2ServerRequest, http2.Http2ServerResponse>
 const server: fastify.FastifyInstance<Server, IncomingMessage, ServerResponse> = fastify({
@@ -73,6 +74,9 @@ server.register(fastifyJWT, {
     secret: process.env.JWT_SECRET || 'secret_secret_secret',
     trusted: validateToken // hook to allow blacklisting of tokens
 })
+
+let notifier = new MessageNotifier()
+server.decorate('messageNotifier', notifier)
 
 // Setup services
 server.register(servicesPlugin)

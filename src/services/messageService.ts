@@ -71,8 +71,6 @@ class MessageService {
 
         let projection: string | null = query.projection ? query.projection : null
 
-        console.log(query.filter, projection, dbCallOptions, cursorOpts)
-
         let cursor = this.Message.find(query.filter, projection, dbCallOptions).cursor(cursorOpts)
 
         return cursor

@@ -72,7 +72,9 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         conn.selected = true
         conn.selectedMailboxData = {
             mailboxaname: mailboxaname,
-            messageSequence: resp.messageSequence
+            messageSequence: resp.messageSequence,
+            readOnly: false,
+            highestModSeq: 0
         }
         // Update the session
         conn.session = resp.updatedSession
@@ -244,6 +246,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
 
         // * OK [HIGHESTMODSEQ 123]
         let modseq = resp.HIGHESTMODSEQ || 0
+        conn.selectedMailboxData.highestModSeq = modseq
         let modeseqResp: IMAPDataResponse = {
             command: 'OK',
             attributes: [
@@ -275,7 +278,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
     // should prefix the text of the final tagged OK response with the
     // READ-WRITE response code else READ-ONLY code
     let readOnly = resp.readOnly || false
-    conn.selectedMailboxData["readOnly"] = readOnly
+    conn.selectedMailboxData.readOnly = readOnly
     let code = readOnly ? IMAPResponseCode['READ-ONLY'] : IMAPResponseCode['READ-WRITE']
     let statusInfo = conn.condstoreEnabled ? 'SELECT completed, CONDSTORE is now enabled' : 'SELECT completed'
     return {
