@@ -7,7 +7,8 @@ import {
     IMAPServerOpts,
     IMAPServerLogger,
     logMessage,
-    IMAPHandlerServices
+    IMAPHandlerServices,
+    UpdatedMessageNotification
 } from './types'
 import {
     TLSSocket,
@@ -18,7 +19,6 @@ import {
 import { v4 as uuidv4 } from 'uuid'
 import { ImapServerError, IMAP_INT_ERRORS, IMAP_STATUS } from './imapErrors'
 import { IMAPConnection } from './imapConnection'
-import { onLoginResp } from './types'
 
 /**
  * Only supports tls connections on port 993
@@ -33,6 +33,7 @@ import { onLoginResp } from './types'
 export class IMAPServer extends EventEmitter {
 
     connections: Map<string, IMAPConnection>
+    authenticatedConnections: Map<string, string[]>
     logger: IMAPServerLogger
     maxConnections: number
     server: Server
@@ -41,6 +42,7 @@ export class IMAPServer extends EventEmitter {
     constructor(options: IMAPServerOpts) {
         super();
         this.connections = new Map<string, IMAPConnection>()
+        this.authenticatedConnections = new Map<string, string[]>()
         // Default to 1 , can't have 0 maxConnections
         this.maxConnections = (!options.maxConnections || options.maxConnections == 0) ? 1 : options.maxConnections
         this.logger = options.logger || console
@@ -75,6 +77,49 @@ export class IMAPServer extends EventEmitter {
 
     listen(port: number, host: string) {
         this.server.listen(port, host);
+    }
+
+    addAuthenticatedConnection(opts: { userUUID: string, connectionId: string }) {
+        let newConnectionList: string[] = [opts.connectionId]
+        let existing = this.authenticatedConnections.get(opts.userUUID)
+        if (existing) {
+            // make sure there are no duplicate connection ids
+            newConnectionList = Array.from(new Set(existing.concat(newConnectionList)))
+        }
+        this.authenticatedConnections.set(opts.userUUID, newConnectionList)
+        console.log(this.authenticatedConnections.get(opts.userUUID), "----------------------")
+    }
+
+    //
+    removeAuthenticatedConnection(opts: { uid: string, connectionId: string }) {
+
+    }
+
+    newMessageAdded(newMsg: {
+        userUUID: string,
+        uid: number,
+        modseq: number,
+        mailboxUUID: string
+    }) {
+        // Find any connections for that user
+        let connIds = this.authenticatedConnections.get(newMsg.userUUID)
+        // if found
+        if (connIds) {
+            connIds.forEach((id: string) => {
+                // try to get connection obj corresponding to the ids
+                let conn = this.connections.get(id)
+                // If connection exists the add notification
+                if (conn) {
+                    let n: UpdatedMessageNotification = {
+                        type: 'EXISTS',
+                        uid: newMsg.uid,
+                        modeseq: newMsg.modseq,
+                        mailboxUUID: newMsg.mailboxUUID
+                    }
+                    conn.addNotifications(n)
+                }
+            })
+        }
     }
 
     /**

@@ -4,7 +4,14 @@ import { TLSSocket } from 'tls'
 import { State, MAX_MESSAGE_SIZE } from './constants'
 import { StreamHandler } from './streamHandler'
 import { imapCommandCompiler } from './imapCommandCompiler'
-import { IMAPStatusResponse, IMAPDataResponse, IMAPCommandContResponse, IMAPSession, SelectedMailboxData } from './types'
+import {
+    IMAPStatusResponse,
+    IMAPDataResponse,
+    IMAPCommandContResponse,
+    IMAPSession,
+    SelectedMailboxData,
+    UpdatedMessageNotification
+} from './types'
 
 const SOCKET_TIMEOUT = 60 * 1000 * 30 // 30 minutes
 
@@ -36,6 +43,7 @@ export class IMAPConnection extends EventEmitter {
     // indicates if CONDSTORE is enabled for the session
     // Refer rfc4551 section 3.7
     condstoreEnabled: boolean
+    updatedMessageNotification: UpdatedMessageNotification[]
 
     constructor(soc: TLSSocket, server: IMAPServer, id: string) {
         super()
@@ -54,6 +62,7 @@ export class IMAPConnection extends EventEmitter {
         this._closed = false
         this._closing = false
         this._closingTimeout = null
+        this.updatedMessageNotification = []
         // Setup stream handler
         this.streamHandler = new StreamHandler(this)
         this._socket.pipe(this.streamHandler)
@@ -75,8 +84,72 @@ export class IMAPConnection extends EventEmitter {
         this.send(`* OK ${process.env.DOMAIN} ready for requests from ${this.remoteAddress}`)
     }
 
-    setSelectedMailbox() {
+    addNotifications(n: UpdatedMessageNotification) {
+        // Add notifications only when the connection is in selected state
+        // otherwise ignore , because the entire updated list be freshly fetched 
+        // on SELECT command
+        if (this.state == State.SELECTED && this.session?.mailboxUUID == n.mailboxUUID) {
+            this.updatedMessageNotification.push(n)
+        }
+        console.log("added new notification", this.updatedMessageNotification)
 
+        console.log('calling notify')
+
+        this.notify()
+    }
+
+    // If notifications exists then process them ,  update the connection states ,
+    // and send notifications to the client
+    // this will be triggered when in selected state the client sends, for eg, a NOOP command
+    /**
+     * eg response.
+     *      C: a002 NOOP
+     *      S: * 23 EXISTS // this is the update notification
+     *      S: a047 OK NOOP completed
+     * 
+     */
+    notify() {
+        // check if we are still in correct state
+        if (this.state == State.SELECTED) {
+            let existsResp: IMAPDataResponse | null = null
+            for (let i = 0; i < this.updatedMessageNotification.length; i++) {
+                let n = this.updatedMessageNotification[i]
+                switch (n.type) {
+                    case "EXISTS":
+                        //accumulate consecutive EXISTS responses into single one as
+                        // only the last one actually matters to the client
+                        // update message sequence
+                        this.selectedMailboxData!.messageSequence.push(n.uid)
+                        this.selectedMailboxData!.highestModSeq = Math.max(this.selectedMailboxData!.highestModSeq, n.modeseq)
+                        existsResp = {
+                            command: '',
+                            attributes: [
+                                {
+                                    type: 'text',
+                                    value: String(this.selectedMailboxData!.messageSequence.length)
+                                },
+                                {
+                                    type: 'atom',
+                                    value: 'EXISTS'
+                                }
+                            ]
+                        }
+                        break
+                    case "EXPUNGE":
+                        break
+                    case "FETCH":
+                        break
+                    default:
+                        break;
+                }
+            }
+
+            if (existsResp) {
+                this.sendDataResponse(existsResp)
+            }
+            // Reset
+            this.updatedMessageNotification = []
+        }
     }
 
     setSession(ses: IMAPSession) {
@@ -212,7 +285,6 @@ export class IMAPConnection extends EventEmitter {
         this.selected = false
         this.selectedMailboxData = null
     }
-
 
     // Send response back to client
 

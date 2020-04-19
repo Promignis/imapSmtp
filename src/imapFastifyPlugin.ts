@@ -17,7 +17,6 @@ import { to } from './utils'
 import { imapLogger } from './logger'
 import { FindQuery } from './types/types'
 import { IMAPFlagsToMessageModel } from './imapUtils'
-import { IMessageDoc } from './db/messages'
 import { events } from './messageNotifier'
 
 async function setupIMAPServer(fastify: any, { }, done: Function) {
@@ -26,6 +25,13 @@ async function setupIMAPServer(fastify: any, { }, done: Function) {
     // Setup Listners
     fastify.messageNotifier.on(events.new, (msg: any) => {
         console.log(process.pid, 'from the listner', msg)
+        // notify the imap server
+        server.newMessageAdded({
+            userUUID: msg.userid,
+            mailboxUUID: msg.mailboxId,
+            uid: msg.uid,
+            modseq: msg.modseq
+        })
     })
 
     // attach services

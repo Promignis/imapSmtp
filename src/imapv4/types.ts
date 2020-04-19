@@ -119,6 +119,17 @@ export interface IMAPCommandContResponse {
     info?: string
 }
 
+export type MessageUpdateTypes = 'EXISTS' // When new message added
+    | 'EXPUNGE' // When message deleted
+    | 'FETCH' // When an existing method modified
+
+export interface UpdatedMessageNotification {
+    type: MessageUpdateTypes,
+    uid: number,
+    modeseq: number,
+    mailboxUUID: string
+}
+
 // This imap session object will be passed to every handler that is run during the auth state
 // Its the handlers responsibility to pass all the values in this sessionProps that it will be
 // need to execute other commands.

@@ -482,6 +482,14 @@ export function outboundMessage(fastify: any): any {
         if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to save outbound mail ${err.message}`, INT_ERRORS.SERVER_ERR)
         }
+        // Notify
+        fastify.messageNotifier.notifyNewMessage({
+            userid: newEmail.user.toHexString(),
+            mailboxId: newEmail.mailbox.toHexString(),
+            uid: newEmail.uid,
+            modseq: newEmail.modseq
+        })
+
         // add to queue
         let replyStatus = "queued successfully"
         let sendRes: any
