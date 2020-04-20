@@ -319,4 +319,18 @@ const getBodyStructure = function (mimeTree) {
     return bodystructure.create();
 }
 
-module.exports = getBodyStructure
+// Generates IMAP compatible BODY object from message tree
+const getBody = (mimeTree) => {
+    // BODY – BODYSTRUCTURE without extension data
+    let body = new BodyStructure(mimeTree, {
+        upperCaseKeys: true,
+        body: true
+    });
+
+    return body.create();
+}
+
+module.exports = {
+    getBodyStructure,
+    getBody
+}

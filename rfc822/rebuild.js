@@ -1,10 +1,12 @@
 const PassThrough = require('stream').PassThrough
 const NEWLINE = Buffer.from('\r\n')
 const formatHeaders = require('./utils').formatHeaders
+const getLength = require('./getLength')
 
 // Rebuilds the original rfc822 text from the MimeTree object (that we get from rfc822parser.js)
+// If textOnly true, do not include the message header in the response
 /**
- * If there were attachments , then it needs 2 arguments getAttachment and createReadStream 
+ * If there were attachments , then 2 options, options.getAttachment and options.createReadStream must be passed
  * which are methods with the following signature
  *       getAttachment(unique_identifier) => Promise(object | null)
  * what ever getAttachment returns will be passed on to createReadStream 
@@ -16,15 +18,18 @@ const formatHeaders = require('./utils').formatHeaders
  * This method returns a Passthrough stream , that streams the rebuilt rfc822 text
  * 
  */
-const rebuild = async function (mimeTree, getAttachment, createReadStream, textOnly, options) {
+const rebuild = async function (mimeTree, textOnly, options) {
     options = options || {};
 
     let output = new PassThrough();
     let aborted = false;
 
-    let skipExternal = options.skipExternal || false
+    let skipExternal = options.skipExternal || true
     let startFrom = Math.max(Number(options.startFrom) || 0, 0)
     let maxLength = Math.max(Number(options.maxLength) || 0, 0)
+
+    let getAttachment = options.getAttachment || null
+    let createReadStream = options.createReadStream || null
 
     output.isLimited = !!(options.startFrom || options.maxLength)
 
@@ -130,7 +135,6 @@ const rebuild = async function (mimeTree, getAttachment, createReadStream, textO
             if (aborted) {
                 return;
             }
-
             if (!textOnly || !isRootNode) {
                 await emit(formatHeaders(node.header).join('\r\n') + '\r\n');
             }
@@ -156,11 +160,15 @@ const rebuild = async function (mimeTree, getAttachment, createReadStream, textO
             } else if (node.attachmentId && skipExternal) {
                 await emit(false, true); // force newline between header and contents
 
-                // this is like a local id right now , example ATT001.... is it needed??
-
                 let attachmentId = node.attachmentId;
                 if (mimeTree.attachmentMap && mimeTree.attachmentMap[node.attachmentId]) {
                     attachmentId = mimeTree.attachmentMap[node.attachmentId];
+                }
+                // If getAttachment method has not been passed but we need to fetch attachment data
+                // then throw error
+                if (!getAttachment || !createReadStream) {
+                    let missing = `${!getAttachment ? 'getAttachment ' : ''}${!createReadStream ? 'createReadStream ' : ''}`
+                    throw new Error(`Cant not get attachment data, missing: ${missing} `)
                 }
                 let attachmentData = await getAttachment(attachmentId)
                 // this should return an id that create will take
@@ -260,7 +268,7 @@ const rebuild = async function (mimeTree, getAttachment, createReadStream, textO
     return {
         type: 'stream',
         value: output,
-        // expectedLength: this.getSize(mimeTree, textOnly)
+        expectedLength: getLength(mimeTree, textOnly)
     };
 }
 

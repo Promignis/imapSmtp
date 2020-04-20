@@ -18,13 +18,13 @@ import { imapLogger } from './logger'
 import { FindQuery } from './types/types'
 import { IMAPFlagsToMessageModel } from './imapUtils'
 import { events } from './messageNotifier'
+import { getQueriedContents } from './imapUtils'
 
 async function setupIMAPServer(fastify: any, { }, done: Function) {
     let server = new IMAPServer({ logger: imapLogger })
 
     // Setup Listners
     fastify.messageNotifier.on(events.new, (msg: any) => {
-        console.log(process.pid, 'from the listner', msg)
         // notify the imap server
         server.newMessageAdded({
             userUUID: msg.userid,
@@ -53,10 +53,12 @@ interface imapSession {
 
 function getAttachment(fastify: any) {
     return async function (id: string): Promise<IAttachmentDoc | null> {
+        let f = fastify
         let filter: any = {
             _id: new mongodb.ObjectID(id)
         }
-        let [err, res] = await to(fastify.attachmentService.getAttachment(filter))
+
+        let [err, res] = await to(f.services.attachmentService.getAttachment(filter))
         if (err != null) {
             throw err
         }
@@ -80,6 +82,8 @@ function createReadStream(fastify: any) {
      * }
      */
     return function (id: string, attachmentData: any, bounds: any): NodeJS.ReadableStream {
+        let f = fastify
+        // console.log('creating read stream...', id, attachmentData, bounds)
         let readStream: NodeJS.ReadableStream
         let objectId = new mongodb.ObjectID(id)
         if (attachmentData) {
@@ -98,10 +102,10 @@ function createReadStream(fastify: any) {
                 streamOpts.end = attachmentData.length
             }
 
-            readStream = fastify.attachmentService.getDownloadStream(objectId, streamOpts)
+            readStream = f.services.attachmentService.getDownloadStream(objectId, streamOpts)
 
         } else {
-            readStream = fastify.attachmentService.getDownloadStream(objectId)
+            readStream = f.services.attachmentService.getDownloadStream(objectId)
         }
 
         return readStream
@@ -331,6 +335,7 @@ function select(fastify: any) {
 function fetch(fastify: any) {
     //(sess: IMAPSession, options: onFetchOptions) => Promise<null>
     return async function (session: IMAPSession, options: onFetchOptions): Promise<AsyncGenerator<any | null, void, unknown>> {
+        let f = fastify
         let userId = session.userUUID
         let sess = <imapSession>session.sessionProps
         let address = sess.address
@@ -399,7 +404,7 @@ function fetch(fastify: any) {
                     // the query is only limited by total size , ie. 16mb
                     // say we are dealing with messageUids of large sizes say 100,000
                     // then it only adds ~400kb to the total query size
-                    // and because of indexing , it should be as effecient as it can be.
+                    // and because of indexing , the find should be as effecient as it can be.
                     // We might need to optimize if and when we start working with mailboxes
                     // with millions of messages, like for example batching queries etc.
                     $in: options.messageUids
@@ -422,12 +427,23 @@ function fetch(fastify: any) {
         }
 
         // Call the service
-        let cursor = fastify.services.messageService.findMessagesCursor({}, findQuery, opts)
+        let cursor = f.services.messageService.findMessagesCursor({}, findQuery, opts)
 
         // return a generator
         async function* gen() {
             for (let msg = await cursor.next(); msg != null; msg = await cursor.next()) {
-                console.log('from the generator', msg.id)
+                // create the response structure
+                try {
+                    let value = await getQueriedContents(options.queries, msg, {
+                        getAttachment: getAttachment(f),
+                        createReadStream: createReadStream(f)
+                    })
+                    console.log(value)
+                } catch (e) {
+                    //TODO: Log here 
+                    throw (e)
+                }
+
                 yield msg
             }
         }

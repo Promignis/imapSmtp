@@ -3,7 +3,7 @@ const extractMailData = require('./extractMailData')
 const getLength = require('./getLength')
 const createIMAPEnvelop = require('./getEnvelope')
 const rebuildOriginal = require('./rebuild')
-const createIMAPBodyStructure = require('./extractBodyStructure')
+const extractBodyStructure = require('./extractBodyStructure')
 const resolveNode = require('./resolveNode')
 const formatHeaders = require('./utils').formatHeaders
 
@@ -12,8 +12,9 @@ module.exports = {
     extractMailData,
     getLength,
     rebuildOriginal,
-    createIMAPBodyStructure,
+    createIMAPBodyStructure: extractBodyStructure.getBodyStructure,
     createIMAPEnvelop,
     resolveNode,
-    formatHeaders
+    formatHeaders,
+    createIMAPBody: extractBodyStructure.getBody
 }

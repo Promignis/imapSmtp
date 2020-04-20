@@ -212,7 +212,21 @@ function saveInbound(fastify: any) {
 
             let mimeTree: any
             try {
-                mimeTree = JSON.parse(mailData.stringifiedMimeTree)
+                // This is to properly parse Buffer data
+                // refer: https://stackoverflow.com/questions/34557889/how-to-deserialize-a-nested-buffer-using-json-parse
+                mimeTree = JSON.parse(mailData.stringifiedMimeTree, (k, v) => {
+                    if (
+                        v !== null &&
+                        typeof v === 'object' &&
+                        'type' in v &&
+                        v.type === 'Buffer' &&
+                        'data' in v &&
+                        Array.isArray(v.data)) {
+                        return new Buffer(v.data)
+                    }
+                    return v
+                })
+                console.log('mime tree --------', mimeTree)
             } catch (err) {
                 fastify.log.error(`[Grpc/MailService/saveInbound] Unable to parse mime tree`, err)
                 throw new Error(`[Grpc/MailService/saveInbound] Unable to save email`)
