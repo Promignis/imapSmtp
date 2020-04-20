@@ -10,7 +10,8 @@ import { IMAPResponseStatus } from '../constants'
 import { IMAPConnection } from '../imapConnection'
 import { to, getMessages } from '../utils'
 import { imapCommandCompiler } from '../imapCommandCompiler'
-
+import { imapStreamCommandCompiler } from '../imapStreamCommandCompiler'
+import { PassThrough } from 'stream'
 
 const messageDataItems: any = {
     //BODY.PEEK is treated same as BODY 
@@ -222,8 +223,6 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
         }
     }
 
-    console.log(queries, "-------------------------")
-
     let opts: onFetchOptions = {
         queries: queries,
         markAsSeen,
@@ -246,17 +245,28 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
         let resp = createResp(queries, valuesArray, uid)
         if (resp.hasLiteral) {
             // If has literal then needs to be streamed 
-            console.log('has literal')
+            let respStream: PassThrough = imapStreamCommandCompiler(resp.response)
+            let [err, _] = await to(conn.streamDataResponse(respStream))
+
+            if (err != null) {
+                // TODO: Close conenction here
+                throw err
+            }
+
+            console.log('did this..')
+
         } else {
             // Can be compiled normally and written
             conn.sendDataResponse(resp.response)
         }
     }
 
+    console.log('now here...')
+
     return {
         tag: cmd.tag,
-        type: IMAPResponseStatus.BAD,
-        info: 'Not Implemented!',
+        type: IMAPResponseStatus.OK,
+        info: `${cmd.command} completed`,
     }
 }
 
@@ -366,6 +376,7 @@ function queryIsValid(schema: any, item: FetchQuery): boolean {
 
 function createResp(qs: FetchQuery[], res: any[], uid: string): { hasLiteral: boolean, response: IMAPDataResponse } {
     let response: IMAPDataResponse = {
+        tag: '*',
         command: '',
         attributes: []
     }
@@ -408,7 +419,7 @@ function createResp(qs: FetchQuery[], res: any[], uid: string): { hasLiteral: bo
             hasLiteral = true
             // BODY, BODY[...], RFC822
             // Here the reaponse is an object with following parameters
-            // {type: 'stream', value<ReadableStream>, expectedLength<number>, startFrom?<number>, maxLength?<number>}
+            // {type: 'stream', value<stream.Passthrough>, expectedLength<number>, startFrom?<number>, maxLength?<number>}
             if (res[i] && res[i].type === 'stream') {
                 respAttributes.push({
                     type: 'LITERAL',

@@ -466,9 +466,14 @@ function fetch(fastify: any) {
                  *  ['', ....]
                  *  It should never be skipped as it will break the ordering.
                  */
-                    yield {
-                        uid: msg.uid,
-                        values
+                    if (!options.markAsSeen) {
+                        yield {
+                            uid: msg.uid,
+                            values
+                        }
+                    } else {
+                        // When imap in READ-WRITE mode then all mails touched by BODY[] or RFC822
+                        // argument should be marked as seen
                     }
 
                 } catch (e) {

@@ -43,11 +43,6 @@ const getContent = (mimeTree: any, selector: ContentSelector, options: GetConten
     let path = selector.path
     let node = mimeTree
 
-    console.log('----------------------------------------')
-    console.log(type)
-    console.log(path)
-    console.log(options)
-
     // If path specified , then we need to fetch that particular node from the MimeTree
     // eg 1.2.3 
     if (path) {
@@ -153,8 +148,6 @@ export const getQueriedContents = async (queries: FetchQuery[], message: IMessag
     let values: any[] = [];
     for (let i = 0; i < queries.length; i++) {
         let q = queries[i]
-        console.log('--------------------------------')
-        console.log(q)
         let value: any
         let flags: string[] = []
         switch (q.item) {

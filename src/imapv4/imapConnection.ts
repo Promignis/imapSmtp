@@ -12,6 +12,7 @@ import {
     SelectedMailboxData,
     UpdatedMessageNotification
 } from './types'
+import { PassThrough } from 'stream'
 
 const SOCKET_TIMEOUT = 60 * 1000 * 30 // 30 minutes
 
@@ -310,6 +311,26 @@ export class IMAPConnection extends EventEmitter {
 
         this._imapServer.logger.info(`${this.id}: TAG: ${resp.tag} Data response sent for ${resp.command} with payload : ${payload}`)
         this.send(payload, cb)
+    }
+
+    async streamDataResponse(stream: PassThrough) {
+        return new Promise((res, rej) => {
+            if (!this._socket) {
+                rej(new Error('Connection does not have a socket'))
+            }
+            if (!this._socket.writable) {
+                rej(new Error('Connection does not have a writable socket'))
+            }
+
+            // Set end as false as we dont want to close the socket once reader ends
+            stream.pipe(this._socket, { end: false })
+
+            stream.once('end', () => {
+                this.send('')
+                return res()
+            })
+            stream.once('error', (err: Error) => rej(err))
+        })
     }
 
     sendCommandContResponse(resp: IMAPCommandContResponse, cb?: () => void) {

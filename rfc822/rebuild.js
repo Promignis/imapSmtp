@@ -31,7 +31,7 @@ const rebuild = async function (mimeTree, textOnly, options) {
     let getAttachment = options.getAttachment || null
     let createReadStream = options.createReadStream || null
 
-    output.isLimited = !!(options.startFrom || options.maxLength)
+    let isLimited = !!(options.startFrom || options.maxLength)
 
     let curWritePos = 0;
     let writeLength = 0;
@@ -171,13 +171,11 @@ const rebuild = async function (mimeTree, textOnly, options) {
                     throw new Error(`Cant not get attachment data, missing: ${missing} `)
                 }
                 let attachmentData = await getAttachment(attachmentId)
-                // this should return an id that create will take
-                // rebuild should not know about any internal working
-                // type it accordingly
 
                 let attachmentSize = node.size;
 
                 let readBounds = getCurrentBounds(attachmentSize);
+                // fetch attachments only if bounds are met
                 if (readBounds) {
                     // move write pointer ahead by skipped base64 bytes
                     let bytes = Math.min(readBounds.startFrom, node.size);
@@ -268,7 +266,8 @@ const rebuild = async function (mimeTree, textOnly, options) {
     return {
         type: 'stream',
         value: output,
-        expectedLength: getLength(mimeTree, textOnly)
+        expectedLength: getLength(mimeTree, textOnly),
+        isLimited
     };
 }
 
