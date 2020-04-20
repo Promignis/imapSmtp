@@ -202,6 +202,8 @@ export interface onSelectResp {
     updatedSession: IMAPSession
 }
 
+
+
 // eg. for a messageData param BODY[HEADER.FIELDS (DATE FROM)]
 // query will look like 
 /**
@@ -218,13 +220,26 @@ export interface onSelectResp {
 export interface FetchQuery {
     queryString: string,
     original: any, // Orignal param object
-    item?: string, // One of messageDataItems keys
+    item: FetchQueryItem, // One of messageDataItems keys
     path?: string, // Mime tree path , eg. '1.2.3.TEXT' , refer rfc3051 section 6.4.5
     type?: string, // if BODY, then param type will be added here , eg. HEADER.FIELDS
     headers?: string[], // if type has a header option , then this will have those headers
-    isLiteral: boolean // The response for this query will be 
+    isLiteral: boolean // The response for this query should be a stream
     partial?: BodyPartial // If BODY param has a partial option , it will be added here
 }
+
+export type FetchQueryItem = 'FLAGS'
+    | 'INTERNALDATE'
+    | 'RFC822.SIZE'
+    | 'ENVELOPE'
+    | 'BODY'
+    | 'RFC822'
+    | 'FLAGS'
+    | 'UID'
+    | 'MODSEQ'
+    | 'BODYSTRUCTURE'
+    | 'RFC822.TEXT'
+    | 'RFC822.HEADER'
 
 export interface BodyPartial {
     startFrom: number,

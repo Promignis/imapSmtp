@@ -3,7 +3,8 @@ import {
     ParsedCommand,
     IMAPStatusResponse,
     FetchQuery,
-    onFetchOptions
+    onFetchOptions,
+    IMAPDataResponse
 } from '../types'
 import { IMAPResponseStatus } from '../constants'
 import { IMAPConnection } from '../imapConnection'
@@ -239,7 +240,17 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
     }
 
     for await (let f of fetchedRes!) {
-        console.log(f.uid, ' from the services ')
+        // now compile response and send
+        let uid = f.uid
+        let valuesArray = f.values
+        let resp = createResp(queries, valuesArray, uid)
+        if (resp.hasLiteral) {
+            // If has literal then needs to be streamed 
+            console.log('has literal')
+        } else {
+            // Can be compiled normally and written
+            conn.sendDataResponse(resp.response)
+        }
     }
 
     return {
@@ -351,4 +362,83 @@ function queryIsValid(schema: any, item: FetchQuery): boolean {
         }
     }
     return true
+}
+
+function createResp(qs: FetchQuery[], res: any[], uid: string): { hasLiteral: boolean, response: IMAPDataResponse } {
+    let response: IMAPDataResponse = {
+        command: '',
+        attributes: []
+    }
+
+    response.attributes.push({
+        type: 'TEXT',
+        value: String(uid)
+    })
+
+    response.attributes.push({
+        type: 'ATOM',
+        value: 'FETCH'
+    })
+
+    let respAttributes: any[] = []
+    let hasLiteral: boolean = false
+    qs.forEach((q: FetchQuery, i: number) => {
+        respAttributes.push(q.original)
+
+        if (['FLAGS', 'MODSEQ'].indexOf(q.item) >= 0) {
+            // These have array response
+            // eg. * 1 FETCH (MODSEQ (65402) FLAGS (\Seen))
+            respAttributes.push(
+                [].concat(res[i] || []).map(value => ({
+                    type: 'ATOM',
+                    value: (value || value === 0 ? value : '').toString()
+                }))
+            )
+        } else if (Object.prototype.toString.call(res[i]) === '[object Date]') {
+            // internal date 
+            let d = new Date(res[i])
+            respAttributes.push({
+                type: 'ATOM',
+                value: new Date(res[i]).toUTCString()
+            })
+        } else if (Array.isArray(res[i])) {
+            // BODYSTRUCTURE and ENVELOPE
+            respAttributes.push(res[i])
+        } else if (q.isLiteral) {
+            hasLiteral = true
+            // BODY, BODY[...], RFC822
+            // Here the reaponse is an object with following parameters
+            // {type: 'stream', value<ReadableStream>, expectedLength<number>, startFrom?<number>, maxLength?<number>}
+            if (res[i] && res[i].type === 'stream') {
+                respAttributes.push({
+                    type: 'LITERAL',
+                    value: res[i].value,
+                    expectedLength: res[i].expectedLength,
+                    startFrom: res[i].startFrom,
+                    maxLength: res[i].maxLength
+                })
+            } else {
+                respAttributes.push({
+                    type: 'LITERAL',
+                    value: res[i]
+                })
+            }
+        } else if (res[i] === '') {
+            // If some query could not be processed.
+            respAttributes[1].push(res[i])
+        } else {
+            // For remaining commands
+            response.attributes[1].push({
+                type: 'ATOM',
+                value: res[i].toString()
+            })
+        }
+    })
+
+    response.attributes.push(respAttributes)
+
+    return {
+        hasLiteral: hasLiteral,
+        response: response
+    }
 }

@@ -434,17 +434,47 @@ function fetch(fastify: any) {
             for (let msg = await cursor.next(); msg != null; msg = await cursor.next()) {
                 // create the response structure
                 try {
-                    let value = await getQueriedContents(options.queries, msg, {
+                    let values = await getQueriedContents(options.queries, msg, {
                         getAttachment: getAttachment(f),
                         createReadStream: createReadStream(f)
                     })
-                    console.log(value)
+                    /**
+                 * TODO: The yielded response can not be typed , becuase it's extremly dynamic
+                 * So document what type of response is expected by the imap server for every query  
+                 * 
+                 * Basic description:
+                 * the yielded value must be an array of responses for each query in the queries array 
+                 * and must be in the same order as the query.
+                 * eg. for the following query 
+                 *  [   
+                 *      {                                              
+                            query: 'FLAGS',                           
+                            item: 'FLAGS',                            
+                            original: ....
+                        },                                          
+                        {                                           
+                            query: 'UID',                           
+                            item: 'UID',                            
+                            original: ...
+                        }
+                    ]  
+                 *  The response would look like this: [[\Seen], 32] (same order as query)
+                 * 
+                 *  If the service can not process certain queries, it should return ''
+                 *  for example for a query like [{query: 'BODYSTRUCTURE' ....}, ...] 
+                 *  if BODYSTRUCTURE can't be processed then response would look like
+                 *  ['', ....]
+                 *  It should never be skipped as it will break the ordering.
+                 */
+                    yield {
+                        uid: msg.uid,
+                        values
+                    }
+
                 } catch (e) {
                     //TODO: Log here 
                     throw (e)
                 }
-
-                yield msg
             }
         }
 

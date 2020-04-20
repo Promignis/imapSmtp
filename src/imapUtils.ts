@@ -180,14 +180,14 @@ export const getQueriedContents = async (queries: FetchQuery[], message: IMessag
 
             case 'INTERNALDATE':
                 if (!message.idate) {
-                    message.idate = new Date();
+                    message.idate = new Date()
                 }
                 value = message.idate;
-                break;
+                break
 
             case 'BODYSTRUCTURE': {
                 if (message.imapBodyStructure) {
-                    value = message.imapBodyStructure // I need only this
+                    value = message.imapBodyStructure
                 }
                 break;
             }
