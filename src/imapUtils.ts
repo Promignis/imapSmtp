@@ -237,13 +237,13 @@ export const getQueriedContents = async (queries: FetchQuery[], message: IMessag
                     value = createIMAPBody(mimeTree)
                 } else if (q.path === '' && q.type === '') {
                     // BODY[]
-                    value = getContent(mimeTree, {
+                    value = await getContent(mimeTree, {
                         type: 'CONTENT',
                         path: ''
                     }, opts);
                 } else {
                     // BODY[SELECTOR]
-                    value = getContent(mimeTree, {
+                    value = await getContent(mimeTree, {
                         type: q.type!,
                         path: q.path || '',
                         headers: q.headers
