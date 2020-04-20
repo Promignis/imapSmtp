@@ -258,7 +258,9 @@ function createQueries(messageData: any[]): FetchQuery[] {
             queryString: imapCommandCompiler({
                 attributes: param
             }),
-            item: (param.value || '').toString(),
+            // convert to upper case to handle lower case commands
+            // eg a001 fetch 1:* (body[text])
+            item: (param.value || '').toString().toUpperCase(),
             original: param,
             isLiteral: false
         }
