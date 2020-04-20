@@ -263,9 +263,9 @@ function createQueries(messageData: any[]): FetchQuery[] {
             isLiteral: false
         }
 
-        // If its BODY param
+        // If its BODY[...] param
         if (param.section) {
-            // If just BODY
+            // If just BODY[]
             if (!param.section.length) {
                 q.path = ''
                 q.type = 'CONTENT' // BODY[]
@@ -305,7 +305,7 @@ function createQueries(messageData: any[]): FetchQuery[] {
             };
         }
 
-        // If not a BODY param
+        // If not a BODY[...] param
         if (['RFC822', 'RFC822.HEADER', 'RFC822.TEXT'].indexOf(param.value.toUpperCase()) >= 0) {
             q.isLiteral = true
         }
@@ -331,17 +331,21 @@ function queryIsValid(schema: any, item: FetchQuery): boolean {
         return true;
     }
 
-    // for BODY params
+    // for BODY[...] params
     if (schema && typeof schema === 'object') {
-        // for BODY[1.2.3] , item.type = ''
-        if (schema.type && !schema.type.test(item.type)) {
-            return false
-        }
+        // If just BODY , then it will have no type parameter
+        if (!item.type) {
+            return true
+        } else {
+            if (schema.type && !schema.type.test(item.type)) {
+                return false
+            }
 
-        // If the type is HEADER then item should have header values present
-        if (schema.headers && schema.headers.test(item.type) && !Array.isArray(item.headers)) {
-            // TODO: Validate each header value too??
-            return false
+            // If the type is HEADER then item should have header values present
+            if (schema.headers && schema.headers.test(item.type) && !Array.isArray(item.headers)) {
+                // TODO: Validate each header value too??
+                return false
+            }
         }
     }
     return true
