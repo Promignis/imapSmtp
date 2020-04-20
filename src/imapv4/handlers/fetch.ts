@@ -253,15 +253,11 @@ export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
                 throw err
             }
 
-            console.log('did this..')
-
         } else {
             // Can be compiled normally and written
             conn.sendDataResponse(resp.response)
         }
     }
-
-    console.log('now here...')
 
     return {
         tag: cmd.tag,
@@ -315,10 +311,9 @@ function createQueries(messageData: any[]): FetchQuery[] {
                 if (/^HEADER.FIELDS(\.NOT)?$/i.test(q.type) && Array.isArray(param.section[1])) {
                     q.headers = param.section[1].map((field: any) => (field.value || '').toString())
                 }
-
-                // All body values are returned as literals
-                q.isLiteral = true
             }
+            // All body values are returned as literals
+            q.isLiteral = true
         }
 
         if (param.partial) {
@@ -436,10 +431,10 @@ function createResp(qs: FetchQuery[], res: any[], uid: string): { hasLiteral: bo
             }
         } else if (res[i] === '') {
             // If some query could not be processed.
-            respAttributes[1].push(res[i])
+            respAttributes.push(res[i])
         } else {
             // For remaining commands
-            response.attributes[1].push({
+            respAttributes.push({
                 type: 'ATOM',
                 value: res[i].toString()
             })
