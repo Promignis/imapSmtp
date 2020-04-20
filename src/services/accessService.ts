@@ -6,7 +6,7 @@ import { RESOURCES } from './resourceService'
 import { ROLES } from './roleService'
 import { R, U, CRU, RU, CUD, CRUD, PRIVILEGES } from './privilegeService'
 import {
-    ServiceContext
+  ServiceContext
 } from '../types/types'
 
 
@@ -19,7 +19,7 @@ import {
 
 // TODO: type more strictly as
 // [key:ResourceProp]: PrivilegeProp[]
-const defaultAccessMap = ():AccessMap => ({
+const defaultAccessMap = (): AccessMap => ({
   user: [],
   user_profile_name: [],
   user_role: [],
@@ -42,7 +42,7 @@ class AccessService {
   Access: mongoose.Model<IAccess>
   ACCESSES: AllowedAccesses
 
-  constructor(access:mongoose.Model<IAccess>) {
+  constructor(access: mongoose.Model<IAccess>) {
     this.Access = access
     this.ACCESSES = { 'user': defaultAccessMap(), 'admin': defaultAccessMap(), 'super_admin': defaultAccessMap() }
 
@@ -78,13 +78,13 @@ class AccessService {
 
     // check if the roles exist
     let filter = {}
-    let err, access:any
+    let err, access: any
     [err, access] = await to(this.Access.find(filter).exec())
-    if(err != null) {
+    if (err != null) {
       throw err
     }
-    if(access.length === 0) {
-      this.initDb(ctx, roles)
+    if (access.length === 0) {
+      return this.initDb(ctx, roles)
     }
     return access
   }
@@ -93,27 +93,27 @@ class AccessService {
   async initDb(ctx: ServiceContext, roles: IRole[]): Promise<IAccess[]> {
     let dbCallOptions: any = {}
     if (ctx && ctx.session) {
-        dbCallOptions.session = ctx.session
+      dbCallOptions.session = ctx.session
     }
 
-    let access:string
-    let accessDoc:Access
-    let accessDocs:IAccess[] = []
+    let access: string
+    let accessDoc: Access
+    let accessDocs: IAccess[] = []
 
 
     // TODO: transaction ?
-    for(const role of roles) {
+    for (const role of roles) {
       accessDoc = {
         role: role._id,
         name: `access_${role.role}`, // TODO: check if this is fine
         access: (this.ACCESSES as any)[role.role], // TODO: type this better
-        metadata:{}
+        metadata: {}
       }
       let doc = new this.Access(accessDoc)
-      let err, result:any
+      let err, result: any
       [err, result] = await to(doc.save())
 
-      if(err != null) {
+      if (err != null) {
         throw err
       }
       accessDocs.push(result)
