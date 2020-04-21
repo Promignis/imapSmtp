@@ -10,6 +10,7 @@ import { fetch } from './handlers/fetch'
 import { logout } from './handlers/logout'
 import { close } from './handlers/close'
 import { id } from './handlers/id'
+import { status } from './handlers/status'
 
 
 const NOOP: CommandMeta = {
@@ -225,7 +226,7 @@ const STATUS: CommandMeta = {
     state: [State.AUTH, State.SELECTED],
     schema: [
         {
-            name: 'mailbox',
+            name: 'mailboxname',
             optional: false,
             type: 'string'
         },
@@ -234,8 +235,10 @@ const STATUS: CommandMeta = {
             optional: false,
             type: 'list'
         }
-    ]
+    ],
+    handler: status
 }
+
 const APPEND: CommandMeta = {
     state: [State.AUTH, State.SELECTED],
     schema: [

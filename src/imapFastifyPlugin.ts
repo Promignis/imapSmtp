@@ -9,6 +9,7 @@ import {
     onSelectResp,
     onFetchOptions,
     FetchQuery,
+    onStatusResponse
 } from './imapv4'
 import { IUser } from './db/users'
 import { IMailboxDoc } from './db/mailboxes'
@@ -39,6 +40,7 @@ async function setupIMAPServer(fastify: any, { }, done: Function) {
     server.handlerServices.onList = list(fastify)
     server.handlerServices.onSelect = select(fastify)
     server.handlerServices.onFetch = fetch(fastify)
+    server.handlerServices.onStatus = status(fastify)
     fastify.decorate('imapServer', server)
 
     done()
@@ -332,7 +334,6 @@ function select(fastify: any) {
 }
 
 function fetch(fastify: any) {
-    //(sess: IMAPSession, options: onFetchOptions) => Promise<null>
     return async function (session: IMAPSession, options: onFetchOptions): Promise<AsyncGenerator<any | null, void, unknown>> {
         let f = fastify
         let userId = session.userUUID
@@ -483,6 +484,47 @@ function fetch(fastify: any) {
         }
 
         return gen()
+    }
+}
+
+function status(fastify: any) {
+    return async function (session: IMAPSession, mailboxname: string): Promise<onStatusResponse | null> {
+        let userId = session.userUUID
+        let sess = <imapSession>session.sessionProps
+        let address = sess.address
+
+        let q: FindQuery = {
+            filter: {
+                user: userId,
+                address: address,
+                imapName: mailboxname
+            }
+        }
+
+        let mailboxes: IMailboxDoc[] | undefined
+        let err: Error | null
+        [err, mailboxes] = await to(fastify.services.mailboxService.findMailboxes({}, q))
+
+        if (err != null) {
+            throw err
+        }
+
+        // It should return just one result for the given filter
+        // If its more or less than one then return null
+        if (mailboxes!.length != 1) {
+            return null
+        }
+
+        let mailbox = mailboxes![0]
+
+        return {
+            messages: mailbox.stats.total,
+            recent: 0,
+            uidnext: mailbox.uidNext,
+            uidValidity: mailbox.uidValidity,
+            unseen: mailbox.stats.unseen,
+            highestmodseq: mailbox.modifyIndex
+        }
     }
 }
 

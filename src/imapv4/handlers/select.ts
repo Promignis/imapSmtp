@@ -49,7 +49,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         throw err
     }
 
-    if (resp! == null) {
+    if (resp == null) {
         // This means mailbox was not present
 
         // if a mailbox is already selected and a SELECT command that

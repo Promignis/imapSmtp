@@ -253,8 +253,14 @@ export interface onFetchOptions {
     changedSince?: number
 }
 
-export interface onFetchResponse {
 
+export interface onStatusResponse {
+    messages?: number, // total number of messages in mailbox
+    recent?: number, // number of recent messages
+    uidnext?: number, //The next unique identifier value of the mailbox 
+    uidValidity?: number, // The unique identifier validity value of the mailbox, refer rfc 3501
+    unseen?: number, // Number of unseen messages
+    highestmodseq?: number // refer rfc4551 section 3.6
 }
 
 export interface IMAPHandlerServices {
@@ -270,7 +276,7 @@ export interface IMAPHandlerServices {
     onRename: null,
     onDelete: null,
     onSelect: ((sess: IMAPSession, mailboxname: string) => Promise<onSelectResp | null>) | null,
-    onStatus: null,
+    onStatus: ((sess: IMAPSession, mailboxname: string) => Promise<onStatusResponse | null>) | null,
     onAppend: null,
     onStore: null,
     onExpunge: null,
