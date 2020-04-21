@@ -102,7 +102,7 @@ export const select: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCo
         }))
 
         let flagResp: IMAPDataResponse = {
-            command: 'FLAG',
+            command: 'FLAGS',
             attributes: [flags]
         }
         conn.sendDataResponse(flagResp)
