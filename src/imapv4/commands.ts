@@ -8,6 +8,7 @@ import { select } from './handlers/select'
 import { unselect } from './handlers/unselect'
 import { fetch } from './handlers/fetch'
 import { logout } from './handlers/logout'
+import { close } from './handlers/close'
 
 
 const NOOP: CommandMeta = {
@@ -306,7 +307,8 @@ const EXPUNGE: CommandMeta = {
 
 const CLOSE: CommandMeta = {
     state: [State.SELECTED],
-    schema: []
+    schema: [],
+    handler: close
 }
 
 
@@ -429,9 +431,8 @@ export const commandList: Map<string, CommandMeta> = new Map([
     * UID command can have 2 forms , one is 'UID STORE/COPY/FETCH' and the other is 'UID SEARCH'
     * Each form is being treated as an indipendent command for easier handling instead of treating UID as an indipendent command 
     */
-    ['UID STORE', UID_STORE],
     ['UID FETCH', UID_FETCH],
-    ['UID SEARCH', UID_SEARCH],
+
     // Does not need implementation
     ['STARTTLS', STARTTLS], // Not needed as unsecure connection is not allowed
 
@@ -444,6 +445,8 @@ export const commandList: Map<string, CommandMeta> = new Map([
     ['APPEND', APPEND],
     ['COPY', COPY],
     ['UID COPY', UID_COPY],
+    ['UID STORE', UID_STORE],
+    ['UID SEARCH', UID_SEARCH],
 
     // Most common Extended commands that can be added in future
     // 'NAMESPACE', // Extension: rfc2342. 
@@ -455,6 +458,6 @@ export const commandList: Map<string, CommandMeta> = new Map([
     // 'GETQUOTA'
     // 'COMPRESS'
 
-]);
+])
 
 
