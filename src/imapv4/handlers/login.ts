@@ -34,10 +34,7 @@ export const login: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCom
         conn.setState(State.AUTH)
 
         // Add to list of authenticated connections
-        conn._imapServer.addAuthenticatedConnection({
-            userUUID: res!.session.userUUID,
-            connectionId: conn.id
-        })
+        conn._imapServer.addAuthenticatedConnection(res!.session.userUUID, conn.id)
 
         // Send capablities on successfull login
         conn.sendCapablity()

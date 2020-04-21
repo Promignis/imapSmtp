@@ -199,8 +199,11 @@ export class IMAPCommand {
             }
             // If no error, send the final status response
             this.connection.sendStatusResponse(res!)
+
+            // If logout command was sent , then close the connecton after sending OK
+            if (this.command === 'LOGOUT') {
+                this.connection.close(false)
+            }
         }
-
     }
-
 }

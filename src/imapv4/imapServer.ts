@@ -79,19 +79,23 @@ export class IMAPServer extends EventEmitter {
         this.server.listen(port, host);
     }
 
-    addAuthenticatedConnection(opts: { userUUID: string, connectionId: string }) {
-        let newConnectionList: string[] = [opts.connectionId]
-        let existing = this.authenticatedConnections.get(opts.userUUID)
+    addAuthenticatedConnection(userUUID: string, connectionId: string) {
+        let newConnectionList: string[] = [connectionId]
+        let existing = this.authenticatedConnections.get(userUUID)
         if (existing) {
             // make sure there are no duplicate connection ids
             newConnectionList = Array.from(new Set(existing.concat(newConnectionList)))
         }
-        this.authenticatedConnections.set(opts.userUUID, newConnectionList)
+        this.authenticatedConnections.set(userUUID, newConnectionList)
     }
 
-    //
-    removeAuthenticatedConnection(opts: { uid: string, connectionId: string }) {
-
+    removeAuthenticatedConnection(userUUID: string, connectionId: string) {
+        let existing = this.authenticatedConnections.get(userUUID)
+        if (existing) {
+            // Filter out the connectionId if it was in the list
+            existing = existing.filter((connId: string) => connId != connectionId)
+            this.authenticatedConnections.set(userUUID, existing)
+        }
     }
 
     newMessageAdded(newMsg: {
@@ -279,7 +283,7 @@ export class IMAPServer extends EventEmitter {
         this.server.on('error', this._onError.bind(this));
     }
 
-    _connectSecure(socket: TLSSocket, ): void {
+    _connectSecure(socket: TLSSocket): void {
         // Create new connection id
         let id = this._newConnectionId()
         let newConnection = new IMAPConnection(socket, this, id)

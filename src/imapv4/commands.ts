@@ -7,6 +7,7 @@ import { list } from './handlers/list'
 import { select } from './handlers/select'
 import { unselect } from './handlers/unselect'
 import { fetch } from './handlers/fetch'
+import { logout } from './handlers/logout'
 
 
 const NOOP: CommandMeta = {
@@ -40,7 +41,8 @@ const LOGIN: CommandMeta = {
 
 const LOGOUT: CommandMeta = {
     state: [],
-    schema: []
+    schema: [],
+    handler: logout
 }
 
 const STARTTLS: CommandMeta = {
