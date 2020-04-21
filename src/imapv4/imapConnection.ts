@@ -282,6 +282,10 @@ export class IMAPConnection extends EventEmitter {
         this.selectedMailboxData = null
     }
 
+    removeSession() {
+        this.session = null
+    }
+
     // Send response back to client
 
     // of form TAG STATUS [CODE ARGS]? INFO?

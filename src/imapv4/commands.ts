@@ -9,6 +9,7 @@ import { unselect } from './handlers/unselect'
 import { fetch } from './handlers/fetch'
 import { logout } from './handlers/logout'
 import { close } from './handlers/close'
+import { id } from './handlers/id'
 
 
 const NOOP: CommandMeta = {
@@ -206,7 +207,8 @@ const ID: CommandMeta = {
             optional: false,
             type: 'array'
         }
-    ]
+    ],
+    handler: id
 }
 
 const IDLE: CommandMeta = {
