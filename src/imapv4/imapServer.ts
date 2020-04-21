@@ -87,7 +87,6 @@ export class IMAPServer extends EventEmitter {
             newConnectionList = Array.from(new Set(existing.concat(newConnectionList)))
         }
         this.authenticatedConnections.set(opts.userUUID, newConnectionList)
-        console.log(this.authenticatedConnections.get(opts.userUUID), "----------------------")
     }
 
     //

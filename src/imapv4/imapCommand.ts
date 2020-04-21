@@ -42,7 +42,7 @@ export class IMAPCommand {
             let match = /^([^\s]+)(?:\s+((?: UID )?[^\s]+)|$)/i.exec(line.value) || [];
 
             this.tag = match[1];
-            this.command = (match[2] || '').trim().toUpperCase();
+            this.command = (match[2] || '').trim().toUpperCase()
 
             if (!this.tag) {
                 this.connection.sendStatusResponse({ type: IMAPResponseStatus.BAD, info: 'Invalid tag' })
@@ -193,6 +193,10 @@ export class IMAPCommand {
                 info: `Internal Server Error`
             })
         } else {
+            // Send notification 
+            if (!['FETCH', 'STORE', 'APPEND'].includes(this.command)) {
+                this.connection.notify()
+            }
             // If no error, send the final status response
             this.connection.sendStatusResponse(res!)
         }

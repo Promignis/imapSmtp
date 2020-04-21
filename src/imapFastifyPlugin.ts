@@ -83,7 +83,6 @@ function createReadStream(fastify: any) {
      */
     return function (id: string, attachmentData: any, bounds: any): NodeJS.ReadableStream {
         let f = fastify
-        // console.log('creating read stream...', id, attachmentData, bounds)
         let readStream: NodeJS.ReadableStream
         let objectId = new mongodb.ObjectID(id)
         if (attachmentData) {

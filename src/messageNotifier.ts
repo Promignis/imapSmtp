@@ -44,7 +44,6 @@ export class MessageNotifier extends EventEmitter {
             //Check if channel scope was correct
             switch (channel) {
                 case events.new:
-                    console.log('emiting...')
                     this.emit(events.new, msg)
                     break;
                 default:

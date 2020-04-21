@@ -92,11 +92,6 @@ export class IMAPConnection extends EventEmitter {
         if (this.state == State.SELECTED && this.session?.mailboxUUID == n.mailboxUUID) {
             this.updatedMessageNotification.push(n)
         }
-        console.log("added new notification", this.updatedMessageNotification)
-
-        console.log('calling notify')
-
-        this.notify()
     }
 
     // If notifications exists then process them ,  update the connection states ,

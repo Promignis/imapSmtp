@@ -222,11 +222,10 @@ function saveInbound(fastify: any) {
                         v.type === 'Buffer' &&
                         'data' in v &&
                         Array.isArray(v.data)) {
-                        return new Buffer(v.data)
+                        return Buffer.from(v.data)
                     }
                     return v
                 })
-                console.log('mime tree --------', mimeTree)
             } catch (err) {
                 fastify.log.error(`[Grpc/MailService/saveInbound] Unable to parse mime tree`, err)
                 throw new Error(`[Grpc/MailService/saveInbound] Unable to save email`)
