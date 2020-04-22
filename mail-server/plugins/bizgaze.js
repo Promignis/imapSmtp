@@ -430,12 +430,12 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     let call = grpcClient.uploadAttachment()
     let size = 0
 
-    encoder.on('data', function (d) {
+    base64Encoder.on('data', function (d) {
         size += d.length
         call.sendMessage({ chunk: d })
     })
 
-    encoder.on('end', function () {
+    base64Encoder.on('end', function () {
         call.end()
             .then(res => {
                 let id = res.id
