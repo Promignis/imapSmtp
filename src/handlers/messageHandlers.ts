@@ -478,7 +478,7 @@ export function outboundMessage(fastify: any): any {
         let currentModifyIndex = mailboxResults![0].modifyIndex
         let currentUid = mailboxResults![0].uidNext
         let saveRes: any
-        [err, saveRes] = await to(f.tx.messageTx.saveEmail(newEmail, currentModifyIndex, currentUid))
+        [err, saveRes] = await to(f.tx.messageTx.saveEmail(newEmail, currentUid, currentModifyIndex))
         if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to save outbound mail ${err.message}`, INT_ERRORS.SERVER_ERR)
         }
