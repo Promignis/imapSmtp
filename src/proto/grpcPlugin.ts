@@ -275,7 +275,7 @@ function saveInbound(fastify: any) {
             let currentModifyIndex = mailboxResults![0].modifyIndex
             let currentUid = mailboxResults![0].uidNext
             let saveRes: any
-            [err, saveRes] = await to(f.tx.messageTx.saveEmail(newEmail, currentModifyIndex, currentUid))
+            [err, saveRes] = await to(f.tx.messageTx.saveEmail(newEmail, currentUid, currentModifyIndex))
             if (err != null) {
                 fastify.log.error(`[Grpc/MailService/saveInbound] Save mail transaction failed`, err)
                 throw new Error(`[Grpc/MailService/saveInbound] Unable to save email`)
