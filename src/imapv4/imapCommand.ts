@@ -101,7 +101,13 @@ export class IMAPCommand {
             this.payload += '\r\n'
         }
 
-        this.connection._imapServer.logger.info(`${this.connection.id}: TAG:${this.tag} Line added - ${line.value}`)
+        // Dont log if the command exposes any sensitive data
+        let sensitiveCommands = ['LOGIN']
+        if (sensitiveCommands.includes(this.command)) {
+            this.connection._imapServer.logger.info(`${this.connection.id}: TAG:${this.tag} Line added - sensitive value not logged`)
+        } else {
+            this.connection._imapServer.logger.info(`${this.connection.id}: TAG:${this.tag} Line added - ${line.value}`)
+        }
         return null
     }
 
