@@ -11,9 +11,7 @@ var addrparser = require('address-rfc2822')
 var rfcHelpers = require('../../rfc822')
 const parse = rfcHelpers.parseMIME
 const getMaidData = rfcHelpers.extractMailData
-const createBodyStructure = rfcHelpers.createIMAPBodyStructure
-const createEnvelope = rfcHelpers.createIMAPEnvelop
-
+const libbase64 = require('libbase64')
 
 exports.setupProtoClient = function (server, next) {
     const plugin = this;
@@ -147,6 +145,7 @@ exports.hook_queue = function (next, connection, params) {
                 connection.logerror(`Error Parsing email: ${e.toString()}`)
                 next(DENY, `Error processing the email.`)
             }
+
             // Extract attachment data out
             let md = getMaidData(parsedMime, true)
 
@@ -328,7 +327,7 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     // Parse the header values
     let attachmentHeaders = body.header.headers_decoded
     /**
-     * Coverts 'text/plain; charset="US-ASCII"; name="something.txt"' to
+     * Converts 'text/plain; charset="US-ASCII"; name="something.txt"' to
      * {
      *      value: 'text/plain',
      *      params: {
@@ -420,17 +419,23 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
 
     pcli.promisify(grpcClient, 'uploadAttachment', { metadata: meta })
 
+    // Haraka converts this to binary which causes problems during reconstruction
+    // so save it as 
+    let base64Encoder = new libbase64.Encoder({})
+
+    stream.pipe(base64Encoder)
+
     stream.resume()
 
     let call = grpcClient.uploadAttachment()
     let size = 0
 
-    stream.on('data', function (d) {
+    encoder.on('data', function (d) {
         size += d.length
         call.sendMessage({ chunk: d })
     })
 
-    stream.on('end', function () {
+    encoder.on('end', function () {
         call.end()
             .then(res => {
                 let id = res.id

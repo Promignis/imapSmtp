@@ -8,6 +8,8 @@ import fs from 'fs'
 import util from 'util'
 import { smtpTransport } from '../smtpSender'
 import { IMailboxDoc } from '../db/mailboxes'
+//@ts-ignore
+import libbase64 from 'libbase64'
 
 //@ts-ignore
 import { createIMAPBodyStructure, createIMAPEnvelop, parseMIME, getLength, extractMailData } from '../../rfc822'
@@ -255,9 +257,11 @@ export function outboundMessage(fastify: any): any {
                 count: 1
             }
             let readStream = fs.createReadStream(files[i].tempFilePath)
+            let base64Encoder = new libbase64.Encoder({})
+            readStream.pipe(base64Encoder)
             let savedFile: any
             let err: any
-            [err, savedFile] = await to(f.services.attachmentService.saveAttachment({}, readStream, info))
+            [err, savedFile] = await to(f.services.attachmentService.saveAttachment({}, base64Encoder, info))
 
             if (err != null) {
                 await cleanupTemp(tempFilePaths)
@@ -272,13 +276,10 @@ export function outboundMessage(fastify: any): any {
                 contentId: "",
                 transferEncoding: "",
                 related: false,
-                size: files[i].size
+                size: savedFile.length
             }
             attachments.push(att)
         }
-
-        // All files uploaded to gridfs , now cleanup the temp files
-        await cleanupTemp(tempFilePaths)
 
         // Thread and save message to sent mailbox
 
@@ -386,14 +387,25 @@ export function outboundMessage(fastify: any): any {
 
         if (html != "") composeOpts['html'] = html;
 
-        let composeOptsAttachment: any[] = attachments.map((a: IAttachment) => {
-            return {
-                filename: a.filename,
-                encoding: 'base64',
-                content: f.services.attachmentService.getDownloadStream(a.fileId),
-                contentTransferEncoding: 'base64'
-            }
-        })
+        // let composeOptsAttachment: any[] = attachments.map((a: IAttachment) => {
+        //     return {
+        //         filename: a.filename,
+        //         // encoding: 'base64',
+        //         content: f.services.attachmentService.getDownloadStream(a.fileId),
+        //         contentTransferEncoding: 'base64',
+        //         contentType: a.contentType
+        //     }
+        // })
+
+        let composeOptsAttachment: any[] = []
+        for (let i in files) {
+            composeOptsAttachment.push({
+                filename: files[i].name,
+                contentType: files[i].mimetype,
+                content: fs.createReadStream(files[i].tempFilePath),
+                contentTransferEncoding: 'base64',
+            })
+        }
 
         let hasAttachments = false
 
@@ -409,10 +421,10 @@ export function outboundMessage(fastify: any): any {
 
         let rfc822Mail: any
         [err, rfc822Mail] = await to(compiled.build())
+
         if (err != null) {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
         }
-
 
         let mimeTree: any = parseMIME(rfc822Mail)
 
@@ -525,6 +537,9 @@ export function outboundMessage(fastify: any): any {
             }
 
         }
+
+        // now cleanup the temp files
+        await cleanupTemp(tempFilePaths)
 
         reply
             .status(HTTP_STATUS.OK)

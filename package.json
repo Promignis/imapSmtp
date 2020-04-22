@@ -30,6 +30,7 @@
     "he": "^1.2.0",
     "http-status-codes": "^1.4.0",
     "ioredis": "^4.16.2",
+    "libbase64": "^1.2.1",
     "libmime": "^4.2.1",
     "libqp": "^1.1.0",
     "mali": "^0.20.0",

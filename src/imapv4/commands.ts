@@ -11,6 +11,7 @@ import { logout } from './handlers/logout'
 import { close } from './handlers/close'
 import { id } from './handlers/id'
 import { status } from './handlers/status'
+import { check } from './handlers/check'
 
 
 const NOOP: CommandMeta = {
@@ -219,7 +220,8 @@ const IDLE: CommandMeta = {
 
 const CHECK: CommandMeta = {
     state: [State.SELECTED],
-    schema: []
+    schema: [],
+    handler: check
 }
 
 const STATUS: CommandMeta = {

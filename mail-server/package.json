@@ -7,6 +7,7 @@
     "grpc": "^1.24.2",
     "grpc-promise": "^1.4.0",
     "haraka-dsn": "^1.0.3",
+    "libbase64": "^1.2.1",
     "libmime": "^4.2.1",
     "mime-types": "^2.1.26",
     "promisify-call": "^2.0.4",

@@ -6,7 +6,7 @@ import {
 import { IMAPConnection } from '../imapConnection'
 import { IMAPResponseStatus } from '../constants'
 
-export const noop: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
+export const check: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
     return {
         tag: cmd.tag,
         type: IMAPResponseStatus.OK,

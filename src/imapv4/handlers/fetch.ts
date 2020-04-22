@@ -412,7 +412,7 @@ function createResp(qs: FetchQuery[], res: any[], uid: string): { hasLiteral: bo
             respAttributes.push(res[i])
         } else if (q.isLiteral) {
             hasLiteral = true
-            // BODY, BODY[...], RFC822
+            // BODY[...], RFC822
             // Here the reaponse is an object with following parameters
             // {type: 'stream', value<stream.Passthrough>, expectedLength<number>, startFrom?<number>, maxLength?<number>}
             if (res[i] && res[i].type === 'stream') {
