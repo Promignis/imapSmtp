@@ -392,7 +392,8 @@ const UID_FETCH: CommandMeta = {
             optional: false,
             type: 'mixed'
         },
-    ]
+    ],
+    handler: fetch
 }
 
 const SEARCH: CommandMeta = {

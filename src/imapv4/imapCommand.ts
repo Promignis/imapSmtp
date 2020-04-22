@@ -39,7 +39,7 @@ export class IMAPCommand {
             // This regex will capture the tag and the command
             // We are treating each UID command variation as its own command,
             // eg. we need to capture UID STORE , not just UID 
-            let match = /^([^\s]+)(?:\s+((?: UID )?[^\s]+)|$)/i.exec(line.value) || [];
+            let match = /^([^\s]+)(?:\s+((?:UID )?[^\s]+)|$)/i.exec(line.value) || [];
 
             this.tag = match[1];
             this.command = (match[2] || '').trim().toUpperCase()
