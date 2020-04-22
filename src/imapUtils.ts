@@ -137,7 +137,6 @@ const getContent = (mimeTree: any, selector: ContentSelector, options: GetConten
 export const getQueriedContents = async (queries: FetchQuery[], message: IMessageDoc, options: QueriedContentsOpts): Promise<any[]> => {
 
     let mimeTree: any = message.body
-    let flags: string[]
     let opts: GetContentOpts = {
         getAttachment: options.getAttachment || null,
         createReadStream: options.createReadStream || null

@@ -368,6 +368,10 @@ function fetch(fastify: any) {
             if (q.item == 'INTERNALDATE') {
                 projection.push('idate')
             }
+
+            if (q.item == 'RFC822.SIZE') {
+                projection.push('size')
+            }
         })
 
         if (!metadataOnly) {

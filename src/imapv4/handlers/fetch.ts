@@ -309,7 +309,7 @@ function createQueries(messageData: any[]): FetchQuery[] {
                 // eg. (BODY[HEADER.FIELDS (DATE FROM)])
                 // then item.headers will have ["DATE", "FROM"]
                 if (/^HEADER.FIELDS(\.NOT)?$/i.test(q.type) && Array.isArray(param.section[1])) {
-                    q.headers = param.section[1].map((field: any) => (field.value || '').toString())
+                    q.headers = param.section[1].map((field: any) => (field.value || '').toString().toUpperCase())
                 }
             }
             // All body values are returned as literals
