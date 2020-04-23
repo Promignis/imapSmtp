@@ -144,7 +144,9 @@ export function outboundMessage(fastify: any): any {
                 try {
                     await unlinkAsync(fileNames[i])
                 } catch (err) {
-                    throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, err.name || INT_ERRORS.SERVER_ERR)
+                    // Log error here. Do not throw as it's not a vital step
+                    // client should not get a 500 if this clean up fails
+                    fastify.log.error(`Failed to clean temp files during Outbound: ${fileNames.join(', ')}`)
                 }
             }
 
@@ -296,9 +298,11 @@ export function outboundMessage(fastify: any): any {
         let addressRes: any
         [err, addressRes] = await to(f.services.addressService.findAddresses({}, addressQuery))
         if (err != null) {
+            await cleanupTemp(tempFilePaths)
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
         }
         if (addressRes.length == 0) {
+            await cleanupTemp(tempFilePaths)
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `No documents found for: ${JSON.stringify(addressQuery)}`, INT_ERRORS.SERVER_ERR)
         }
 
@@ -317,9 +321,11 @@ export function outboundMessage(fastify: any): any {
         let mailboxResults: IMailboxDoc[] | undefined
         [err, mailboxResults] = await to(f.services.mailboxService.findMailboxes({}, mailboxQuery))
         if (err != null) {
+            await cleanupTemp(tempFilePaths)
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
         }
         if (mailboxResults!.length == 0) {
+            await cleanupTemp(tempFilePaths)
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `No documents found for: ${JSON.stringify(mailboxQuery)}`, INT_ERRORS.SERVER_ERR)
         }
 
@@ -337,9 +343,11 @@ export function outboundMessage(fastify: any): any {
             let messageRes: any
             [err, messageRes] = await to(f.services.messageService.findMessages({}, messageQuery))
             if (err != null) {
+                await cleanupTemp(tempFilePaths)
                 throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
             }
             if (messageRes.length == 0) {
+                await cleanupTemp(tempFilePaths)
                 throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `No documents found for: ${JSON.stringify(messageQuery)}`, INT_ERRORS.SERVER_ERR)
             }
 
@@ -424,6 +432,7 @@ export function outboundMessage(fastify: any): any {
         [err, rfc822Mail] = await to(compiled.build())
 
         if (err != null) {
+            await cleanupTemp(tempFilePaths)
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
         }
 
@@ -493,6 +502,7 @@ export function outboundMessage(fastify: any): any {
         let saveRes: any
         [err, saveRes] = await to(f.tx.messageTx.saveEmail(newEmail, currentUid, currentModifyIndex))
         if (err != null) {
+            await cleanupTemp(tempFilePaths)
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to save outbound mail ${err.message}`, INT_ERRORS.SERVER_ERR)
         }
         // Notify
@@ -549,12 +559,13 @@ export function outboundMessage(fastify: any): any {
             [err, updatedCount] = await to(f.services.messageService.updateMessages({}, updateMessageQuery))
 
             if (err != null) {
+                await cleanupTemp(tempFilePaths)
                 throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message, INT_ERRORS.SERVER_ERR)
             }
 
         }
 
-        // now cleanup the temp files
+        // Message was queued,  now cleanup the temp files before sending response
         await cleanupTemp(tempFilePaths)
 
         reply
