@@ -414,6 +414,7 @@ export function outboundMessage(fastify: any): any {
             hasAttachments = true
             composeOpts['attachments'] = composeOptsAttachment
         }
+
         // Build rfc822 raw email
         // MailComposer does not add subject header if subject passed was an empty string, ie. ""
         let compiled = new MailComposer(composeOpts).compile()
@@ -501,6 +502,21 @@ export function outboundMessage(fastify: any): any {
             uid: newEmail.uid,
             modseq: newEmail.modseq
         })
+
+        // The content readstream has been closed, so need to setup new value
+        // reset old values
+        composeOptsAttachment = []
+        // set it up again
+        for (let i in files) {
+            composeOptsAttachment.push({
+                filename: files[i].name,
+                contentType: files[i].mimetype,
+                content: fs.createReadStream(files[i].tempFilePath),
+                contentTransferEncoding: 'base64',
+            })
+        }
+        // update compose options
+        composeOpts['attachments'] = composeOptsAttachment
 
         // add to queue
         let replyStatus = "queued successfully"
