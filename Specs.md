@@ -11,7 +11,7 @@ Suggestions for predefined roles
 New roles can be created with a permutation of the below mentioned user management Privleges. Each user is assigned a default *User* role when created. 
 
 ### Privleges 
-These current privalages for user management needed for first version of the application are listed below. More privalages can be added and integrated in the future easily as scope expands.
+Possible privleges for user management are listed below. More privalages can be added and integrated in the future easily as scope expands.
 
 1. **Create** -  Can Create a new user or users
 2. **Update** - Can update certain user attributes
@@ -29,48 +29,48 @@ These current privalages for user management needed for first version of the app
 3. **Delete** - Can delete any user
 
 ## API's 
-These are just a summary of all the apis that will be provided. A more detailed doc with request and response will be added in future.
+These are just a summary of all the apis that will be provided in current and future versions.
 
-1. **Address**
+1. **Address -- no multi address support in current version** 
     1. Add a new email address for a User
     2. Delete an existing Address
     3. Get Address info
     4. List All Addresses for a User
     5. Update Address information
-2. **Auth**
+2. **Auth **
     1. Authenticate (login) user
     2. Logout User
-3. **Mailboxes**
+3. **Mailboxes -- no custom mailbox support in current version**
     1. Create new custom Mailbox
     2. Delete a custom Mailbox
     3. List all Mailboxes for a User
     4. Update Mailboxes for a User (System Mailboxes can not be updated, Only custom mailboxes can be)
 4. **User**
     1. Create New User or Users
-    2. Delete a User or Users
-    3. List all Users (paginated)(For user management view)
-    4. Update User Attributes
+    2. Delete a User or Users *-- not in current version*
+    3. List all Users (paginated)(For user management view) *-- not in current version*
+    4. Update User Attributes *-- not in current version*
         1. Change Password
         2. Change Role
         3. Update User profile
         4. Update User Settings
-    5. Get User info
+    5. Get User info *-- not in current version*
         1. Get Profile info
         2. Get Settings info
         3. Get Usage and Quota info
         4. Get Events (From the events collection)
 5. **Messages**
     1. List Messages in a Mailbox 
-    2. Search Messages (paginated) (Based on some filter values like from , to , subject , date)
-    3. Delete a message or Messages
-    4. Delete all messages from a mailbox
+    2. Search Messages (paginated) (Based on some filter values like from , to , subject , date) *-- not in current version*
+    3. Delete a message or Messages *-- not in current version*
+    4. Delete all messages from a mailbox *-- not in current version*
     5. Get a particular message 
     6. Get a particular thread
-    7. Create and Update a draft message
-    8. Update a message
+    7. Create and Update a draft message *-- not in current version*
+    8. Update a message *-- not in current version*
         1. Update message flags 
         2. Move a message to a different mailbox
-    9. Download Message attachment
+    9. Download Message attachment *-- not in current version*
     10. Send 
         1. Send a new Message
         2. Forward an existing message
@@ -152,7 +152,7 @@ files {
     uploadDate<int64:timestamp> // The date the document was first stored in GridFS
     filename <string> //Optional file name
     metadata {
-
+        count <int> // this keeps the count of how many messages are currently referencing this file
     } // a map of other metadatas about the file 
 }
 ```
@@ -178,7 +178,6 @@ messages{
     userRemoved<bool> // If the original user of this message has been disabled by this admin
     idate<int64:timestamp> // internal date for IMAP server, As specified in [RFC3501](https://tools.ietf.org/html/rfc3501), section 2.3.3
     size<int64> // total message envelope headers and body size in Bytes. This does not include the attachment size.
-    parsedHeaders<map<string,string>> // Parsed message headers, eg. 
     messageId<string> //unique messageId as given in the header
     draft<bool> // True if the message is a draft
     subject<string> // message subject
@@ -199,17 +198,22 @@ messages{
         starred<bool>
         important<bool>
     }  // Default flags for a message 
-    body {
-        headers<object>
-        isHTML<bool>
-        contentType {
-            value<string>
-            params<map<string,string>> // Can be nill for certain content types
-        }
-        bodyEncoding<string>
-        bodyContent<string>
-        children<body[]> // Message body can have many nested levels.If children is `null` that means its the end of nesting.
-    }
+    body { // parsed mime node
+       childNodes <body[]> // Is an array of mime nodes
+       header // mime node header strings
+       parsedHeader <map<string, string>>// parsed node headers
+       body <buffer> // node body content buffer
+       multipart <bool> // Is the current node of type multipart
+       boundry <string> // node boundry , only for multipart nodes
+       lineCount <int> // count of new line(\n) seperations
+       size <int> // node body size in Bytes. It does not inclde the header size
+       attachmentId <string> // This is only present in child nodes, not in root node
+       attachmentMap <map<string, string>> // only present in root node, not in child nodes
+    },
+    imapBodyStructure <object>,
+    imapEnvelopStructure <object>,
+    text <string> // the text body of the email
+    html <[]string> // All html bodies of the mail
     mailbox_id<bson> // Mailbox id of the mailbox the message is currently in
     user_is<bson>
     address_id<bson>
@@ -236,22 +240,15 @@ mailboxes {
     retentionTime<int64> // Retention time in ms, can be configured.
     user_id<bson>
     address_id<bson>
+    stats: {
+        total <int> // total mails in the mailbox
+        unseen <int> // unseen mils in the mailbox
+        sizeKB <int> // total size of all the emails in the mailbox
+    }
 }
 ```
 
-### Eventlogs
-Eventlogs collection will persist some server events for a user, for example login event etc.
-```
-eventlogs {
-    id<bson>
-    user_id<bson>
-    action<string> // taken from a list of predefined server actions, like "ACCOUNT_CREATED"
-    meta<map<string, string>> // Meta data about the event. Will vary according to the action
-}
-
-```
-
-### Buckets
+### Buckets **Not being used currently**
 Buckets are a way to organize users files and attachents. Right now its just simple boxes to put files into. Every user will have a default bucket per address into which all the attachment files will go. More properties and complete directory like functionality can be added in the future. 
 
 ```

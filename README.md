@@ -30,8 +30,11 @@ sudo haraka -c .
 
 Start the http service
 ```
-source env.sh //Setup all the correct env variables
+source env_staging.sh //Setup all the correct env variables depending on the type of deployment
+
 sudo -E npm run start //Start the service
+// Or use 
+./startServices.sh
 ```
 
 ## Configs
