@@ -43,6 +43,10 @@
         },
         "server": {
             "port": 4001
+        },
+        "tls": {
+            "cert": "",
+            "key": ""
         }
     },
     "swagger": {

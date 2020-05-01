@@ -39,6 +39,8 @@ export class IMAPServer extends EventEmitter {
     server: Server
     secureContexts: Map<string, SecureContext>
     handlerServices: IMAPHandlerServices
+    tlsCertPath: string
+    tlsKeyPath: string
     constructor(options: IMAPServerOpts) {
         super();
         this.connections = new Map<string, IMAPConnection>()
@@ -47,6 +49,9 @@ export class IMAPServer extends EventEmitter {
         this.maxConnections = (!options.maxConnections || options.maxConnections == 0) ? 1 : options.maxConnections
         this.logger = options.logger || console
         this.secureContexts = new Map()
+        // certs
+        this.tlsCertPath = options.tls && options.tls.certPath || path.join(process.cwd(), "src/imapv4/imapCerts", "imapv4.server.crt")
+        this.tlsKeyPath = options.tls && options.tls.keyPath || path.join(process.cwd(), "src/imapv4/imapCerts", "imapv4.server.key")
         // Load all the certs needed
         this._updateCtx()
         this.server = this._createServer()
@@ -127,13 +132,13 @@ export class IMAPServer extends EventEmitter {
 
     /**
      * Can have different secureContext object for different domains
+     * incase multiple domains point to same imap server
      * "*" represents a wildcard
      */
     _updateCtx(opts?: any) {
         // Certs for wildcard
-        // TODO: Move cert paths to config 
-        let cert = fs.readFileSync(path.join(process.cwd(), "src/imapv4/imapCerts", "imapv4.server.crt"))
-        let key = fs.readFileSync(path.join(process.cwd(), "src/imapv4/imapCerts", "imapv4.server.key"))
+        let cert = fs.readFileSync(this.tlsCertPath)
+        let key = fs.readFileSync(this.tlsKeyPath)
 
         let sessionIdContext = crypto
             .createHash('sha1')

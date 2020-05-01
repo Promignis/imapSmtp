@@ -19,6 +19,7 @@ export interface IMAPServerOpts {
     logger?: IMAPServerLogger, // Default logger is console
     // Max number of concurrent connections for a given user. if  0, will default to 1
     maxConnections?: number,
+    tls?: { certPath: string, keyPath: string }
 }
 
 export interface CommandMeta {

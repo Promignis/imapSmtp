@@ -23,6 +23,10 @@
         },
         "server": {
             "port": 993
+        },
+        "tls": {
+            "cert": "/etc/letsencrypt/live/dsolitaire.in/fullchain.pem",
+            "key": "/etc/letsencrypt/live/dsolitaire.in/privkey.pem"
         }
     },
     "swagger": {

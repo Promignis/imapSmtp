@@ -20,9 +20,18 @@ import { FindQuery } from './types/types'
 import { IMAPFlagsToMessageModel } from './imapUtils'
 import { events } from './messageNotifier'
 import { getQueriedContents } from './imapUtils'
+import config from './config'
 
 async function setupIMAPServer(fastify: any, { }, done: Function) {
-    let server = new IMAPServer({ logger: imapLogger })
+    let certPath: string = config.get("imap.tls.cert")
+    let keyPath: string = config.get("imap.tls.key")
+    let server = new IMAPServer({
+        logger: imapLogger,
+        tls: {
+            keyPath,
+            certPath
+        }
+    })
 
     // Setup Listners
     fastify.messageNotifier.on(events.new, (msg: any) => {
