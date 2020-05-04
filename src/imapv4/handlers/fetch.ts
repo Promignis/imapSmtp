@@ -47,14 +47,14 @@ const messageDataItems: any = {
 // message data can be one value or a sequence of params eg. (BODY[HEADER.FIELDS (DATE FROM)] BODY[TEXT] RFC822.HEADER BODYSTRUCTURE)
 export const fetch: CommandHandler = async (conn: IMAPConnection, cmd: ParsedCommand): Promise<IMAPStatusResponse> => {
 
-    // That means no service is attached. In this case return a bad response
-    // if (conn._imapServer.handlerServices.onFetch == null) {
-    //     return {
-    //         tag: cmd.tag,
-    //         type: IMAPResponseStatus.BAD,
-    //         info: `Command ${cmd.command} not implemented`
-    //     }
-    // }
+    // That means no service is attached.In this case return a bad response
+    if (conn._imapServer.handlerServices.onFetch == null) {
+        return {
+            tag: cmd.tag,
+            type: IMAPResponseStatus.BAD,
+            info: `Command ${cmd.command} not implemented`
+        }
+    }
 
     let isUid = (cmd.command || '').toString().toUpperCase() === 'UID FETCH' ? true : false
     let sequenceSet = (cmd.attributes[0] && cmd.attributes[0].value) || ''

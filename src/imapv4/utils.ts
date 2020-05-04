@@ -55,7 +55,7 @@ export function getMessages(messageSeq: number[], seqSet: string, isUid: boolean
             start = range[0] == "*" ? max : Number(range[0])
             end = start
             if (range[1]) {
-                end = range[1] == "*" ? max : Number(range[0])
+                end = range[1] == "*" ? max : Number(range[1])
             }
             if (isNaN(start) || isNaN(end)) {
                 return false
@@ -70,7 +70,7 @@ export function getMessages(messageSeq: number[], seqSet: string, isUid: boolean
     for (let i = 0; i < messageSeq.length; i++) {
         let uid = messageSeq[i] || 1
         // If its a UID command , then we need to check for uid value , else index value
-        if (isInRange(isUid ? uid : i + 1, isUid ? maxUid : messageSeq.length)) {
+        if (isInRange(isUid ? uid : i + 1, isUid ? maxUid : totalMessages)) {
             messageIds.push(messageSeq[i])
         }
     }
