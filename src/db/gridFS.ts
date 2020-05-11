@@ -1,7 +1,6 @@
 import mongoose from 'mongoose'
 import mongodb from 'mongodb'
 import { GridFSOpts, GridFSWriteOpts } from './types'
-import { Stream } from 'stream'
 
 const GridFSBucket = mongoose.mongo.GridFSBucket
 
@@ -100,11 +99,16 @@ class GridFS {
         return stream
     }
 
-    delete(id: mongodb.ObjectID, done: { (error?: Error, id?: mongoose.Types.ObjectId): void }): void {
-
-        this.bucket.delete(id, function afterDelete(error) {
-            return done(error, id);
-        });
+    async delete(id: mongodb.ObjectID): Promise<void> {
+        return new Promise((res, rej) => {
+            this.bucket.delete(id, function afterDelete(error) {
+                if (error) {
+                    return rej(error)
+                } else {
+                    return res()
+                }
+            });
+        })
     }
 }
 

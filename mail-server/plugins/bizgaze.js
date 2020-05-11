@@ -3,7 +3,7 @@ const protoLoader = require('@grpc/proto-loader')
 const path = require('path')
 const fs = require('fs')
 const ps = require('promisify-call')
-const pcli = require('grpc-promise')
+// const pcli = require('grpc-promise')
 var libmime = require('libmime');
 const uuidv4 = require('uuid/v4')
 var mime = require('mime-types')
@@ -12,6 +12,7 @@ var rfcHelpers = require('../../rfc822')
 const parse = rfcHelpers.parseMIME
 const getMaidData = rfcHelpers.extractMailData
 const libbase64 = require('libbase64')
+const promisifyClientStreamRequest = require('../promisifyClientReq')
 
 exports.setupProtoClient = function (server, next) {
     const plugin = this;
@@ -61,7 +62,8 @@ exports.hook_data = function (next, connection) {
 
         connection.transaction.notes.attachment = {
             todo_count: 0,
-            attachments: []
+            attachments: [],
+            attachmentErrors: []
         }
 
         connection.transaction.attachment_hooks(
@@ -402,8 +404,18 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     let count = addresses.size
 
     function next() {
-        if (attachments_still_processing(txn)) return;
-        txn.notes.attachment.next();
+        if (attachments_still_processing(txn)) {
+            return;
+        } else {
+            // Processing done
+            if (txn.notes.attachment.attachmentErrors.length != 0) {
+                connection.logerror(`Failed processing the following attachments: ${txn.notes.attachment.attachmentErrors.join(", ")}`)
+                // Deny hard here, so that the sender MTA does not keep retrying again and again
+                txn.notes.attachment.next(DENY, 'Error Processing the mail')
+            } else {
+                txn.notes.attachment.next()
+            }
+        }
     }
 
     txn.notes.attachment.todo_count++;
@@ -417,39 +429,78 @@ function start_att(connection, ct, fn, body, stream, grpcClient) {
     meta.add('contenttype', attachment.contentType.value);
     meta.add('count', String(count)); // Protobuf metadata can only be of type string or buffer
 
-    pcli.promisify(grpcClient, 'uploadAttachment', { metadata: meta })
-
     // Haraka converts this to binary which causes problems during reconstruction
-    // so save it as 
+    // so save it as b64
     let base64Encoder = new libbase64.Encoder({})
 
     stream.pipe(base64Encoder)
 
     stream.resume()
 
-    let call = grpcClient.uploadAttachment()
+    let call = promisifyClientStreamRequest(grpcClient, 'uploadAttachment', { metadata: meta })
+    let callEnded = false
+    let timedOut = false
+
+    function endCall() {
+        if (callEnded) {
+            return
+        }
+
+        callEnded = true
+
+        call.end()
+            .then(res => {
+                txn.notes.attachment.todo_count--
+                if (timedOut) {
+                    connection.logerror(`Timed out while uploading attachment: ${attachment.fileName}, ${attachment.contentType.value}, ${size}`)
+                    // Add error
+                    txn.notes.attachment.attachmentErrors.push(attachment.fileName)
+                    next()
+                } else {
+                    if (res.id) {
+                        attachment['id'] = res.id
+                        attachment['size'] = size
+                        txn.notes.attachment.attachments.push(attachment)
+                        next()
+                    } else {
+                        connection.logerror(`Error while uploading attachment, no id: ${attachment.fileName}, ${attachment.contentType.value}, ${size}. ${err.message}`)
+                        txn.notes.attachment.attachmentErrors.push(attachment.fileName)
+                        next()
+                    }
+                }
+            })
+            .catch(err => {
+                txn.notes.attachment.todo_count--
+                connection.logerror(`Error while uploading attachment: ${attachment.fileName}, ${attachment.contentType.value}, ${size}. ${err.message}`)
+                txn.notes.attachment.attachmentErrors.push(attachment.fileName)
+                next()
+            })
+    }
+
     let size = 0
 
-    base64Encoder.on('data', function (d) {
+    // Set a time out to properly end things
+    let uploadTimeOut = setTimeout(() => {
+        // destroy stream
+        // Stops from calling
+        // base64Encoder.destroy(new Error('timed out'))    
+        // Send a message indicating incomplete upload
+        call.sendMessage({ chunk: Buffer.from(''), incomplete: true })
+        timedOut = true
+        endCall()
+    }, 90000)
+
+    base64Encoder.on('data', async function (d) {
         size += d.length
         call.sendMessage({ chunk: d })
     })
 
-    base64Encoder.on('end', function () {
-        call.end()
-            .then(res => {
-                let id = res.id
-                attachment['id'] = id
-                attachment['size'] = size
-                txn.notes.attachment.attachments.push(attachment)
-                txn.notes.attachment.todo_count--;
-                next();
-            })
-            .catch(err => {
-                txn.notes.attachment.todo_count--;
-                connection.logerror(err.message)
-                next(DENY, 'Error processing the email');
-            })
+    // TODO: Try to catch validation errors before end
+    base64Encoder.on('end', async function () {
+        // Clear the timer
+        clearTimeout(uploadTimeOut)
+        // End the grpc call
+        endCall()
     })
 }
 

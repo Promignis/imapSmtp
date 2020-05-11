@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import mongoose, { ConnectionStates } from 'mongoose'
 import fastifyPlugin from 'fastify-plugin'
 import path from 'path'
 // Using Mali instead of directly using node grpc package because it does not support promises
@@ -73,9 +73,9 @@ function checkValidity(fastify: any) {
 function uploadAttachment(fastify: any) {
     return async function (ctx: any) {
         let f: any = fastify
-
         let meta: any = ctx.metadata
-
+        // to log upload time
+        let startTime = process.hrtime()
         // If the metadata values are not present throw error. Can not create a file without them
         if (!meta.filename || !meta.contenttype || !meta.count) {
             let missingFields: string[] = []
@@ -98,12 +98,23 @@ function uploadAttachment(fastify: any) {
             throw new Error(`[Grpc/MailService/uploadAttachment] Error typecasting count metadata`)
         }
 
+        let incompleteFile: boolean = false
+
         let inputStream: NodeJS.ReadableStream = ctx.request.req
 
         let transformStream = new Transformer()
 
         inputStream.on('data', (d: any) => {
-            transformStream.write(d.chunk)
+            if (d.incomplete) {
+                incompleteFile = true
+                // Close the resable stream
+                transformStream.end()
+
+            } else {
+                if (transformStream.writable) {
+                    transformStream.write(d.chunk)
+                }
+            }
         })
 
         inputStream.on('end', (d: any) => {
@@ -124,8 +135,29 @@ function uploadAttachment(fastify: any) {
             throw err
         }
 
+        let uploadTime = process.hrtime(startTime)[1] / 1000000 // Conv nano to milli s
+        fastify.log.info(`[Grpc/MailService/uploadAttachment] Uploaded file ${file._id.toString()} (${uploadTime}ms). Name: ${file.filename}, Size: ${file.length}`)
+
+        let fileId = file._id
+        let response = fileId.toString()
+
+        if (incompleteFile) {
+            // Remove the unfinished file.
+            startTime = process.hrtime()
+            let [err, _] = await to(f.services.attachmentService.deleteAttachment({}, fileId))
+
+            if (err != null) {
+                // Log but dont stop 
+                fastify.log.Error(`[Grpc/MailService/uploadAttachment] Error removing uncompleted file ${file._id.toString()}.`, err)
+            } else {
+                let removalTime = process.hrtime(startTime)[1] / 1000000 // Conv nano to milli s
+                fastify.log.info(`[Grpc/MailService/uploadAttachment] Removed uncompleted for file ${file._id.toString()} (${removalTime}ms). Name: ${file.filename}, Size: ${file.length}`)
+            }
+
+            response = ''
+        }
         ctx.res = {
-            id: file._id.toString()
+            id: response
         }
     }
 }

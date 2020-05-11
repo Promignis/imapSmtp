@@ -1,5 +1,4 @@
 import GridFS from '../db/gridFS'
-import mongoose from 'mongoose'
 import mongodb from 'mongodb'
 import { AttachmentInfo } from '../types/types'
 import { GridFSWriteOpts } from '../db/types'
@@ -38,8 +37,11 @@ class AttachmentService {
         })
     }
 
-    deleteAttachment() {
-
+    async deleteAttachment(ctx: any, id: mongodb.ObjectID): Promise<void> {
+        let [err, _] = await to(this.gridFS.delete(id))
+        if (err != null) {
+            throw err
+        }
     }
 
     downloadAttachment() {

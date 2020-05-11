@@ -9,7 +9,7 @@ export SUPERADMIN_PASSWORD=caef6db9da0aac1df0d8e247ccd3469ad77f90379e50c9574d215
 export JWT_SECRET=secret_secret_secret
 
 # Domain
-domain=bizgaze.com
+domain=dsolitaire.in
 export DOMAIN=${domain}
 # SMTP
 export SMTP_USER="bizgaze"

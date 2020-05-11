@@ -17,6 +17,7 @@ message UploadedFileId {
 
 message Chunk {
   bytes chunk = 1;
+  bool incomplete = 2;
 }
 
 message Attachments {
