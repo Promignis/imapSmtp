@@ -16,7 +16,6 @@ function promisifyClientStreamRequest(client, methods, options) {
 class ClientStreamRequest {
 
     constructor(client, original_function, options = {}) {
-        console.log('in new constructor', options.metadata._internal_repr.filename)
         if (options == null) options = {};
         this.options = options
         this.promise = new Promise((resolve, reject) => {
@@ -39,7 +38,6 @@ class ClientStreamRequest {
     }
 
     sendMessage(content = {}) {
-        console.log(this.options, "called...", this.options.metadata._internal_repr.filename)
         this.stream.write(content);
         return this;
     }
