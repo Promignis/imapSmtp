@@ -1,10 +1,10 @@
 #!/bin/bash
 
-bg=1
+bg=0
 
-if [[ $1 == "--nobg" ]]
+if [[ $1 == "--bg" ]]
 then
-    bg=0
+    bg=1
 fi
 # Stop old services
 if [ "$PROCESS_NAME" == "" ]
@@ -31,7 +31,7 @@ else
     if [ $bg == 1 ]
     then
         echo "Starting in background."
-        sudo -E npm run start & exit
+        bash sudo -E npm run start & exit
     else
         sudo -E npm run start
     fi

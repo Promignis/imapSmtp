@@ -137,7 +137,7 @@ export function getThreadedMessages(fastify: any): any {
 export function outboundMessage(fastify: any): any {
     return async (req: any, reply: any) => {
         let f: any = fastify
-
+        let start: [number, number]
         let cleanupTemp = async (fileNames: string[]) => {
 
             for (let i = 0; i < fileNames.length; i++) {
@@ -251,7 +251,9 @@ export function outboundMessage(fastify: any): any {
             )
         }
 
-        // upload files to gridfs and create attachment objects
+        // Upload using promise.all
+        start = process.hrtime()
+        let uploadPromises: Promise<any>[] = []
         for (let i in files) {
             let info: AttachmentInfo = {
                 filename: files[i].name,
@@ -261,30 +263,36 @@ export function outboundMessage(fastify: any): any {
             let readStream = fs.createReadStream(files[i].tempFilePath)
             let base64Encoder = new libbase64.Encoder({})
             readStream.pipe(base64Encoder)
-            let savedFile: any
-            let err: any
-            [err, savedFile] = await to(f.services.attachmentService.saveAttachment({}, base64Encoder, info))
+            uploadPromises.push(f.services.attachmentService.saveAttachment({}, base64Encoder, info))
+        }
 
-            if (err != null) {
-                await cleanupTemp(tempFilePaths)
-                throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, err.messages, INT_ERRORS.SERVER_ERR)
-            }
+        let [uploadErr, uploadResults] = await to(Promise.all(uploadPromises))
 
+        if (uploadErr != null) {
+            await cleanupTemp(tempFilePaths)
+            throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, uploadErr!.message, INT_ERRORS.SERVER_ERR)
+        }
+
+        console.log('upload finished..', uploadResults!)
+
+        for (let i in uploadResults!) {
             let att: IAttachment = {
-                fileId: savedFile._id,
-                filename: files[i].name,
+                fileId: uploadResults[i]._id,
+                filename: uploadResults[i].filename,
                 contentDisposition: 'attachment',
-                contentType: files[i].mimetype,
+                contentType: uploadResults[i].contentType,
                 contentId: "",
                 transferEncoding: "",
                 related: false,
-                size: savedFile.length
+                size: uploadResults[i].length
             }
             attachments.push(att)
         }
+        let uploadEnded = process.hrtime(start)
+        f.log.info(`Uploaded attachments successfully (${uploadEnded[0]}s ${uploadEnded[1] / 1000000}ms)`)
 
         // Thread and save message to sent mailbox
-
+        start = process.hrtime()
         // Get address
         let addressId: mongoose.Types.ObjectId = user.primeAddress
         if (req.body.addressId) {
@@ -505,6 +513,10 @@ export function outboundMessage(fastify: any): any {
             await cleanupTemp(tempFilePaths)
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, `Unable to save outbound mail ${err.message}`, INT_ERRORS.SERVER_ERR)
         }
+
+        let saveMailEnded = process.hrtime(start)
+        f.log.info(`Mail processed and saved succesfully (${saveMailEnded[0]}s ${saveMailEnded[1] / 1000000}ms)`)
+
         // Notify
         fastify.messageNotifier.notifyNewMessage({
             userid: newEmail.user.toHexString(),
@@ -529,6 +541,7 @@ export function outboundMessage(fastify: any): any {
         composeOpts['attachments'] = composeOptsAttachment
 
         // add to queue
+        start = process.hrtime()
         let replyStatus = "queued successfully"
         let sendRes: any
         [err, sendRes] = await to(smtpTransport.sendMail(composeOpts))
@@ -564,6 +577,10 @@ export function outboundMessage(fastify: any): any {
             }
 
         }
+
+        let queueEnded = process.hrtime(start)
+        console.log('queueEnded', queueEnded)
+        f.log.info(`Mail queued successfully (${queueEnded[0]}s ${queueEnded[1] / 1000000}ms)`)
 
         // Message was queued,  now cleanup the temp files before sending response
         await cleanupTemp(tempFilePaths)

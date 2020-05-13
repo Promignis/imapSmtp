@@ -135,8 +135,8 @@ function uploadAttachment(fastify: any) {
             throw err
         }
 
-        let uploadTime = process.hrtime(startTime)[0]
-        fastify.log.info(`[Grpc/MailService/uploadAttachment] Uploaded file ${file._id.toString()} (${uploadTime}s). Name: ${file.filename}, Size: ${file.length}`)
+        let uploadTime = process.hrtime(startTime)
+        fastify.log.info(`[Grpc/MailService/uploadAttachment] Uploaded file ${file._id.toString()} (${uploadTime[0]}s ${uploadTime[1] / 1000000}ms). Name: ${file.filename}, Size: ${file.length}`)
 
         let fileId = file._id
         let response = fileId.toString()
@@ -150,8 +150,8 @@ function uploadAttachment(fastify: any) {
                 // Log but dont stop 
                 fastify.log.Error(`[Grpc/MailService/uploadAttachment] Error removing uncompleted file ${file._id.toString()}.`, err)
             } else {
-                let removalTime = process.hrtime(startTime)[0]
-                fastify.log.info(`[Grpc/MailService/uploadAttachment] Removed uncompleted for file ${file._id.toString()} (${removalTime}s). Name: ${file.filename}, Size: ${file.length}`)
+                let removalTime = process.hrtime(startTime)
+                fastify.log.info(`[Grpc/MailService/uploadAttachment] Removed uncompleted for file ${file._id.toString()} (${removalTime[0]}s ${removalTime[1] / 1000000}ms). Name: ${file.filename}, Size: ${file.length}`)
             }
 
             response = ''
