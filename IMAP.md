@@ -87,7 +87,7 @@ The parsed object will look like this:
 ```
 
 ### Compiler
-Threre are 2 types of compilers, normal and streaming. Both take in in a JS object as defined above. It can be self generated or can be the output of the compiler.
+Threre are 2 types of compilers, normal and streaming. Both take in in a JS object as defined above. It can be self generated or can be the output of the parser.
 
 Normal Compiler gives back a command string. 
 The stream compiler returns a stream that can be piped to the tcp socket. The stream compiler is used for commands
