@@ -273,8 +273,6 @@ export function outboundMessage(fastify: any): any {
             throw new ServerError(HTTP_STATUS.INTERNAL_SERVER_ERROR, uploadErr!.message, INT_ERRORS.SERVER_ERR)
         }
 
-        console.log('upload finished..', uploadResults!)
-
         for (let i in uploadResults!) {
             let att: IAttachment = {
                 fileId: uploadResults[i]._id,
@@ -579,7 +577,6 @@ export function outboundMessage(fastify: any): any {
         }
 
         let queueEnded = process.hrtime(start)
-        console.log('queueEnded', queueEnded)
         f.log.info(`Mail queued successfully (${queueEnded[0]}s ${queueEnded[1] / 1000000}ms)`)
 
         // Message was queued,  now cleanup the temp files before sending response

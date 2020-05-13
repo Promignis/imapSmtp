@@ -31,7 +31,7 @@ else
     if [ $bg == 1 ]
     then
         echo "Starting in background."
-        bash sudo -E npm run start & exit
+        sudo -E npm run start & exit
     else
         sudo -E npm run start
     fi
