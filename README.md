@@ -1,4 +1,4 @@
-# Bizgaze-mail
+# mail 
 
 ## Local Setup
 
